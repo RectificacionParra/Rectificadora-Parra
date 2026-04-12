@@ -1,6 +1,6 @@
 const STORAGE_KEY = "recticontrol_v3_pro";
 const SESSION_KEY = "recticontrol_session_v1";
-const STATES = ["Ingresado", "En proceso", "Terminado", "Cancelado", "Entregado"];
+const STATES = ["Ingresado", "En proceso", "Terminado", "En Desarme", "Entregado"];
 const PRIORITIES = ["Normal", "Urgente", "Muy urgente"];
 const CLOUD_REFRESH_MS = 20000;
 
@@ -397,9 +397,10 @@ function persist() {
 function defaultData() {
   return {
     employees: [
-      { id: uid(), name: "Juan Perez", username: "juan", password: "1234" },
-      { id: uid(), name: "Maria Lopez", username: "maria", password: "1234" },
-      { id: uid(), name: "Admin Taller", username: "admin", password: "admin123" },
+      { id: uid(), name: "Diego Parra", username: "Diego", password: "Diego1234" },
+      { id: uid(), name: "Gaucho", username: "Gaucho", password: "Gaucho123" },
+      { id: uid(), name: "Santiago", username: "Santi", password: "Santi123" },
+      { id: uid(), name: "ThiagoFacha", username: "Thiago", password: "Thiago1234" },
     ],
     clients: [
       { id: uid(), name: "Taller Lopez", phone: "5491122334455", email: "taller@mail.com", address: "" },
