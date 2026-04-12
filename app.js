@@ -17,6 +17,7 @@ let toastTimer = null;
 let data = loadData();
 let cloudPollTimer = null;
 let cloudSubscriptions = [];
+let lastLocalStatusMutationAt = 0;
 
 const cloud = {
   enabled: false,
@@ -147,8 +148,9 @@ function setSyncBadge(isOnline, text) {
   el.syncBadge.classList.toggle("offline", !isOnline);
 }
 
-async function pullCloudDataAndRender() {
+async function pullCloudDataAndRender(options = {}) {
   if (!cloud.enabled || !cloud.client) return;
+  const previousStatuses = new Map((data.jobs || []).map((j) => [j.id, j.status]));
   try {
     const [employeesRes, clientsRes, jobsRes, quotesRes, historyRes, settingsRes] = await Promise.all([
       cloud.client.from("employees").select("*"),
@@ -170,6 +172,14 @@ async function pullCloudDataAndRender() {
     persist();
     hydrateSelects();
     renderActiveTab();
+    if (options.notifyRemote && currentUser) {
+      const changed = data.jobs.filter((j) => previousStatuses.has(j.id) && previousStatuses.get(j.id) !== j.status);
+      const hasRecentLocalChange = Date.now() - lastLocalStatusMutationAt < 2500;
+      if (changed.length && !hasRecentLocalChange) {
+        const first = changed[0];
+        showToastWithSound(`Estado actualizado: ${first.number} -> ${first.status}`);
+      }
+    }
     setSyncBadge(true, "Nube");
   } catch {
     setSyncBadge(false, "Local");
@@ -191,12 +201,12 @@ function startCloudLiveSync() {
     const channel = cloud.client
       .channel(`public:${table}:${uid()}`)
       .on("postgres_changes", { event: "*", schema: "public", table }, () => {
-        pullCloudDataAndRender();
+        pullCloudDataAndRender({ notifyRemote: true });
       })
       .subscribe();
     cloudSubscriptions.push(channel);
   });
-  cloudPollTimer = setInterval(() => pullCloudDataAndRender(), CLOUD_REFRESH_MS);
+  cloudPollTimer = setInterval(() => pullCloudDataAndRender({ notifyRemote: true }), CLOUD_REFRESH_MS);
 }
 
 function stopCloudLiveSync() {
@@ -566,12 +576,28 @@ function renderJobsTab() {
   title.textContent = tabTitle(activeTab);
   container.append(title);
 
-  if (!jobs.length) {
-    container.append(makeEmptyCard("Sin trabajos para mostrar."));
-  } else {
-    jobs.forEach((job) => container.append(makeJobCard(job)));
-  }
+  const motors = jobs.filter((j) => j.type === "motor");
+  const heads = jobs.filter((j) => j.type === "tapa");
+
+  container.append(makeJobsTypeSection("Motores", motors));
+  container.append(makeJobsTypeSection("Tapas", heads));
+
   el.mainView.replaceChildren(container);
+}
+
+function makeJobsTypeSection(label, jobs) {
+  const section = document.createElement("section");
+  section.className = "cards-grid";
+  const title = document.createElement("h3");
+  title.className = "section-title";
+  title.textContent = label;
+  section.append(title);
+  if (!jobs.length) {
+    section.append(makeEmptyCard(`Sin ${label.toLowerCase()} para mostrar.`));
+    return section;
+  }
+  jobs.forEach((job) => section.append(makeJobCard(job)));
+  return section;
 }
 
 function filterJobsByTab(tab, text) {
@@ -965,6 +991,7 @@ function openQuoteDialog({ quoteId = "", clientId = "", type = "presupuesto" } =
 function updateJobStatus(jobId, status) {
   const job = getJob(jobId);
   if (!job || job.status === status) return;
+  lastLocalStatusMutationAt = Date.now();
   const before = job.status;
   job.status = status;
   if (status === "Terminado" || status === "Entregado") job.outDate = today();
