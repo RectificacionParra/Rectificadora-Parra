@@ -161,11 +161,11 @@ async function pullCloudDataAndRender() {
     if (employeesRes.error || clientsRes.error || jobsRes.error || quotesRes.error || historyRes.error) {
       throw new Error("Error de lectura nube");
     }
-    data.employees = employeesRes.data || [];
-    data.clients = clientsRes.data || [];
-    data.jobs = jobsRes.data || [];
-    data.quotes = quotesRes.data || [];
-    data.history = historyRes.data || [];
+    data.employees = (employeesRes.data || []).map(fromCloudEmployee);
+    data.clients = (clientsRes.data || []).map(fromCloudClient);
+    data.jobs = (jobsRes.data || []).map(fromCloudJob);
+    data.quotes = (quotesRes.data || []).map(fromCloudQuote);
+    data.history = (historyRes.data || []).map(fromCloudHistory);
     data.counters = settingsRes.data?.counters || data.counters || { motor: 0, tapa: 0, repuesto: 0, presupuesto: 0 };
     persist();
     hydrateSelects();
@@ -225,6 +225,133 @@ function syncCloudSafely(task) {
   task()
     .then(() => setSyncBadge(true, "Nube"))
     .catch(() => setSyncBadge(false, "Local"));
+}
+
+function fromCloudEmployee(row) {
+  return {
+    id: row.id,
+    name: row.name || "",
+    username: row.username || "",
+    password: row.password || "",
+  };
+}
+
+function fromCloudClient(row) {
+  return {
+    id: row.id,
+    name: row.name || "",
+    phone: row.phone || "",
+    email: row.email || "",
+    address: row.address || "",
+  };
+}
+
+function fromCloudJob(row) {
+  return {
+    id: row.id,
+    number: row.number || "",
+    type: row.type || "motor",
+    vehicle: row.vehicle || "",
+    clientId: row.clientid || row.clientId || "",
+    priority: row.priority || "Normal",
+    assignedEmployeeId: row.assignedemployeeid || row.assignedEmployeeId || "",
+    status: row.status || "Ingresado",
+    inDate: row.indate || row.inDate || "",
+    promisedDate: row.promiseddate || row.promisedDate || "",
+    outDate: row.outdate || row.outDate || "",
+  };
+}
+
+function fromCloudQuote(row) {
+  return {
+    id: row.id,
+    number: row.number || "",
+    clientId: row.clientid || row.clientId || "",
+    type: row.type || "presupuesto",
+    description: row.description || "",
+    items: row.items || "",
+    labor: Number(row.labor || 0),
+    parts: Number(row.parts || 0),
+    total: Number(row.total || 0),
+    date: row.date || "",
+  };
+}
+
+function fromCloudHistory(row) {
+  return {
+    id: row.id,
+    message: row.message || "",
+    by: row.by || "",
+    at: row.at || "",
+  };
+}
+
+function toCloudEmployee(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    username: row.username,
+    password: row.password,
+  };
+}
+
+function toCloudClient(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    email: row.email || "",
+    address: row.address || "",
+  };
+}
+
+function toCloudJob(row) {
+  return {
+    id: row.id,
+    number: row.number,
+    type: row.type,
+    vehicle: row.vehicle,
+    clientid: row.clientId,
+    priority: row.priority,
+    assignedemployeeid: row.assignedEmployeeId || "",
+    status: row.status,
+    indate: row.inDate || "",
+    promiseddate: row.promisedDate || "",
+    outdate: row.outDate || "",
+  };
+}
+
+function toCloudQuote(row) {
+  return {
+    id: row.id,
+    number: row.number,
+    clientid: row.clientId,
+    type: row.type,
+    description: row.description,
+    items: row.items || "",
+    labor: Number(row.labor || 0),
+    parts: Number(row.parts || 0),
+    total: Number(row.total || 0),
+    date: row.date || "",
+  };
+}
+
+function toCloudHistory(row) {
+  return {
+    id: row.id,
+    message: row.message,
+    by: row.by,
+    at: row.at,
+  };
+}
+
+function syncRowToCloud(collection, payload) {
+  if (collection === "employees") return pushTableRow("employees", toCloudEmployee(payload));
+  if (collection === "clients") return pushTableRow("clients", toCloudClient(payload));
+  if (collection === "jobs") return pushTableRow("jobs", toCloudJob(payload));
+  if (collection === "quotes") return pushTableRow("quotes", toCloudQuote(payload));
+  if (collection === "history") return pushTableRow("history", toCloudHistory(payload));
+  return Promise.resolve();
 }
 
 function loadData() {
@@ -1089,11 +1216,11 @@ function importData(event) {
       if (cloud.enabled) {
         syncCloudSafely(async () => {
           await Promise.all([
-            ...data.employees.map((x) => pushTableRow("employees", x)),
-            ...data.clients.map((x) => pushTableRow("clients", x)),
-            ...data.jobs.map((x) => pushTableRow("jobs", x)),
-            ...data.quotes.map((x) => pushTableRow("quotes", x)),
-            ...data.history.map((x) => pushTableRow("history", x)),
+            ...data.employees.map((x) => pushTableRow("employees", toCloudEmployee(x))),
+            ...data.clients.map((x) => pushTableRow("clients", toCloudClient(x))),
+            ...data.jobs.map((x) => pushTableRow("jobs", toCloudJob(x))),
+            ...data.quotes.map((x) => pushTableRow("quotes", toCloudQuote(x))),
+            ...data.history.map((x) => pushTableRow("history", toCloudHistory(x))),
           ]);
           await pushCounters();
         });
@@ -1142,7 +1269,7 @@ function upsert(collection, payload) {
   const idx = data[collection].findIndex((x) => x.id === payload.id);
   if (idx === -1) data[collection].push(payload);
   else data[collection][idx] = payload;
-  syncCloudSafely(() => pushTableRow(collection, payload));
+  syncCloudSafely(() => syncRowToCloud(collection, payload));
 }
 
 function getClient(id) {
