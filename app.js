@@ -968,6 +968,7 @@ function updateJobStatus(jobId, status) {
   const before = job.status;
   job.status = status;
   if (status === "Terminado" || status === "Entregado") job.outDate = today();
+  syncCloudSafely(() => syncRowToCloud("jobs", job));
   addHistory(`Estado ${job.number}: ${before} -> ${status}`, currentUser.name);
   if (status === "Terminado" || status === "Cancelado") {
     showToastWithSound(`${job.number} ${job.vehicle} paso a ${status} por ${currentUser.name}`);
