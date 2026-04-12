@@ -18,6 +18,7 @@ let data = loadData();
 let cloudPollTimer = null;
 let cloudSubscriptions = [];
 let lastLocalStatusMutationAt = 0;
+let quoteLogoDataUrl = null;
 
 const cloud = {
   enabled: false,
@@ -1137,60 +1138,187 @@ function sendQuoteOnline(quoteId) {
   window.open(url, "_blank");
 }
 
-function buildQuotePdfDoc(quote) {
+async function buildQuotePdfDoc(quote) {
   const client = getClient(quote.clientId);
   const jspdf = window.jspdf;
   if (!jspdf?.jsPDF) throw new Error("PDF no disponible");
   const doc = new jspdf.jsPDF({ unit: "mm", format: "a4" });
-  const margin = 14;
-  let y = 18;
+  const pageW = 210;
+  const pageH = 297;
+  const m = 10;
+  const contentW = pageW - m * 2;
+
+  doc.setDrawColor(40, 40, 40);
+  doc.setLineWidth(0.55);
+  doc.roundedRect(m, m, contentW, pageH - m * 2, 2.2, 2.2);
+
+  const headerY = 14;
+  const headerH = 42;
+  const leftW = 122;
+  const rightW = contentW - leftW;
+  doc.rect(m, headerY, leftW, headerH);
+  doc.rect(m + leftW, headerY, rightW, headerH);
+
+  const logoData = await getQuoteLogoDataUrl();
+  if (logoData) doc.addImage(logoData, "JPEG", m + 4, headerY + 4, 30, 30);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(14);
+  doc.text("RECTIFICACION PARRA", m + 38, headerY + 9);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.2);
+  doc.text("Tapas de cilindro y rectificacion de motores", m + 38, headerY + 15);
+  doc.text("Av. Mitre 1234 - Pilar, Buenos Aires", m + 38, headerY + 20);
+  doc.text("Tel: 2304-427198", m + 38, headerY + 25);
+  doc.text("R.U.T.: 25134267", m + 38, headerY + 30);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12.5);
+  doc.text("PRESUPUESTO", m + leftW + 6, headerY + 11);
+  doc.setFontSize(9.8);
+  doc.text(quote.number || "Presupuesto", m + leftW + 6, headerY + 18);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.8);
+  doc.text(`FECHA: ${formatDateForPdf(quote.date)}`, m + leftW + 6, headerY + 25);
+  doc.rect(m + leftW + 6, headerY + 28, rightW - 12, 8);
+
+  const infoY = headerY + headerH;
+  const infoH = 24;
+  doc.rect(m, infoY, contentW, infoH);
+  doc.line(m, infoY + 6, m + contentW, infoY + 6);
+  doc.line(m, infoY + 12, m + contentW, infoY + 12);
+  doc.line(m, infoY + 18, m + contentW, infoY + 18);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9.2);
+  doc.text("Senor:", m + 2, infoY + 4.5);
+  doc.text("Calle:", m + 2, infoY + 10.5);
+  doc.text("Ciudad:", m + 2, infoY + 16.5);
+  doc.text("Condiciones:", m + 2, infoY + 22.5);
+  doc.setFont("helvetica", "normal");
+  doc.text(client?.name || "-", m + 20, infoY + 4.5);
+  doc.text(client?.address || "-", m + 20, infoY + 10.5);
+  doc.text("Pilar", m + 20, infoY + 16.5);
+  doc.text("Validez 7 dias - Sujeto a revision final", m + 30, infoY + 22.5);
+
+  const tableY = infoY + infoH;
+  const tableH = 214;
+  const impW = 42;
+  const descW = contentW - impW;
+  const rowH = 10;
+  const maxRows = Math.floor((tableH - 12) / rowH);
+
+  doc.rect(m, tableY, contentW, tableH);
+  doc.line(m + descW, tableY, m + descW, tableY + tableH);
+  doc.line(m, tableY + 10, m + contentW, tableY + 10);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.text("Descripcion", m + descW / 2, tableY + 7, { align: "center" });
+  doc.text("Importe", m + descW + impW / 2, tableY + 7, { align: "center" });
+
+  for (let i = 1; i <= maxRows; i += 1) {
+    const y = tableY + 10 + i * rowH;
+    if (y < tableY + tableH) doc.line(m, y, m + contentW, y);
+  }
+
+  const rows = normalizeQuoteRows(quote);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.3);
+  rows.slice(0, maxRows - 1).forEach((row, idx) => {
+    const y = tableY + 10 + rowH * idx + 6.5;
+    const text = doc.splitTextToSize(row.description, descW - 4)[0] || "";
+    doc.text(text, m + 2, y);
+    doc.text(formatAmountArs(row.amount), m + contentW - 2, y, { align: "right" });
+  });
+
+  const totalY = tableY + tableH - rowH;
+  doc.setFillColor(35, 35, 35);
+  doc.rect(m + descW, totalY, impW, rowH, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11.2);
+  doc.text("TOTAL", m + descW + 3, totalY + 6.6);
+  doc.text(formatAmountArs(quote.total), m + contentW - 2, totalY + 6.6, { align: "right" });
+  doc.setTextColor(20, 20, 20);
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("RECTIFICACION PARRA", margin, y);
-  y += 8;
-  doc.setFontSize(12);
-  doc.text("Presupuesto de cliente", margin, y);
-  y += 9;
+  doc.text("DUPLICADO", m + contentW - 8, pageH - 20, { angle: 270, align: "right" });
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
-  const lines = [
-    `Numero: ${quote.number}`,
-    `Fecha: ${quote.date}`,
-    `Cliente: ${client?.name || "Sin cliente"}`,
-    `Telefono: ${client?.phone || "-"}`,
-    `Tipo: ${quote.type}`,
-    `Descripcion: ${quote.description}`,
-    "",
-    "Detalle de items:",
-    quote.items || "-",
-    "",
-    `Mano de obra: ${money(quote.labor)}`,
-    `Repuestos: ${money(quote.parts)}`,
-    `TOTAL: ${money(quote.total)}`,
-  ];
-  lines.forEach((line) => {
-    const wrapped = doc.splitTextToSize(line, 180);
-    wrapped.forEach((wLine) => {
-      if (y > 276) {
-        doc.addPage();
-        y = 18;
-      }
-      doc.text(wLine, margin, y);
-      y += 6;
-    });
-  });
-  y += 6;
-  doc.setFont("helvetica", "italic");
-  doc.text("Gracias por confiar en Rectificacion Parra.", margin, y);
   return doc;
 }
 
-function downloadQuotePdf(quoteId) {
+function normalizeQuoteRows(quote) {
+  const rows = [];
+  const lines = String(quote.items || "")
+    .split("\n")
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+  lines.forEach((line) => {
+    const parsed = parseLineItem(line);
+    rows.push(parsed);
+  });
+
+  if (Number(quote.labor || 0) > 0) {
+    rows.push({ description: "Mano de obra", amount: Number(quote.labor || 0) });
+  }
+  if (Number(quote.parts || 0) > 0) {
+    rows.push({ description: "Repuestos", amount: Number(quote.parts || 0) });
+  }
+  if (!rows.length) rows.push({ description: quote.description || "Trabajo general", amount: Number(quote.total || 0) });
+  return rows;
+}
+
+function parseLineItem(line) {
+  const withDash = line.match(/^(.*?)[\s-]+([\d.,]+)$/);
+  if (!withDash) return { description: line, amount: 0 };
+  const amount = Number(withDash[2].replace(/\./g, "").replace(",", ".")) || 0;
+  return { description: withDash[1].trim(), amount };
+}
+
+function formatAmountArs(value) {
+  return money(value || 0);
+}
+
+function formatDateForPdf(dateText) {
+  if (!dateText) return "-";
+  const parts = String(dateText).split("-");
+  if (parts.length !== 3) return dateText;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+async function getQuoteLogoDataUrl() {
+  if (quoteLogoDataUrl) return quoteLogoDataUrl;
+  try {
+    const img = await loadImageAsync("./logo-parra.jpeg");
+    const canvas = document.createElement("canvas");
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0);
+    quoteLogoDataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    return quoteLogoDataUrl;
+  } catch {
+    return null;
+  }
+}
+
+function loadImageAsync(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function downloadQuotePdf(quoteId) {
   const quote = getQuote(quoteId);
   if (!quote) return;
   try {
-    const doc = buildQuotePdfDoc(quote);
+    const doc = await buildQuotePdfDoc(quote);
     doc.save(`${quote.number}.pdf`);
   } catch {
     alert("No se pudo generar el PDF en este navegador.");
@@ -1201,7 +1329,7 @@ async function shareQuotePdf(quoteId) {
   const quote = getQuote(quoteId);
   if (!quote) return;
   try {
-    const doc = buildQuotePdfDoc(quote);
+    const doc = await buildQuotePdfDoc(quote);
     const blob = doc.output("blob");
     const file = new File([blob], `${quote.number}.pdf`, { type: "application/pdf" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -1211,7 +1339,7 @@ async function shareQuotePdf(quoteId) {
         files: [file],
       });
     } else {
-      downloadQuotePdf(quoteId);
+      await downloadQuotePdf(quoteId);
       showToast("Este celular no soporta compartir archivos directo. Se descargo el PDF.");
     }
   } catch {
