@@ -176,6 +176,13 @@ async function pullCloudDataAndRender() {
   }
 }
 
+async function pullCloudEmployeesOnly() {
+  if (!cloud.enabled || !cloud.client) return;
+  const { data: employees, error } = await cloud.client.from("employees").select("*");
+  if (error) throw error;
+  data.employees = (employees || []).map(fromCloudEmployee);
+}
+
 function startCloudLiveSync() {
   if (!cloud.enabled || !cloud.client) return;
   stopCloudLiveSync();
@@ -459,8 +466,16 @@ function restoreSession() {
   showLogin();
 }
 
-function onLogin(event) {
+async function onLogin(event) {
   event.preventDefault();
+  if (cloud.enabled) {
+    try {
+      await pullCloudEmployeesOnly();
+    } catch {
+      el.loginError.textContent = "No se pudo conectar con la nube. Revisa internet/Supabase.";
+      return;
+    }
+  }
   const username = el.loginUser.value.trim().toLowerCase();
   const password = el.loginPassword.value.trim();
   const user = data.employees.find((e) => e.username.toLowerCase() === username && e.password === password);
