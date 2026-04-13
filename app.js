@@ -1200,7 +1200,7 @@ async function buildQuotePdfDoc(quote) {
   doc.text(client?.name || "-", m + 20, infoY + 4.5);
   doc.text(client?.address || "-", m + 20, infoY + 10.5);
   doc.text("Pilar", m + 20, infoY + 16.5);
-  doc.text("Validez 7 dias - Sujeto a revision final", m + 30, infoY + 22.5);
+  doc.text("Validez 15 dias - Suejeto a Modificacion sin Previo Aviso", m + 30, infoY + 22.5);
 
   const tableY = infoY + infoH;
   const tableH = 214;
@@ -1244,7 +1244,7 @@ async function buildQuotePdfDoc(quote) {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("DUPLICADO", m + contentW - 8, pageH - 20, { angle: 270, align: "right" });
+  doc.text("ORIGINAL", m + contentW - 8, pageH - 20, { angle: 270, align: "right" });
 
   return doc;
 }
