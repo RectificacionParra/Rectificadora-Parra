@@ -1192,10 +1192,10 @@ async function buildQuotePdfDoc(quote) {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9.2);
-  doc.text("Senor:", m + 2, infoY + 4.5);
+  doc.text("Señor:", m + 2, infoY + 4.5);
   doc.text("Calle:", m + 2, infoY + 10.5);
   doc.text("Ciudad:", m + 2, infoY + 16.5);
-  doc.text("Condiciones:", m + 2, infoY + 22.5);
+  doc.text("Condiciones:", m  2, infoY + 22.5);
   doc.setFont("helvetica", "normal");
   doc.text(client?.name || "-", m + 20, infoY + 4.5);
   doc.text(client?.address || "-", m + 20, infoY + 10.5);
@@ -1238,7 +1238,7 @@ async function buildQuotePdfDoc(quote) {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11.2);
-  doc.text("TOTAL", m + descW + 3, totalY + 6.6);
+  doc.text("TOTAL", m + descW + 3, totalY + 7.7);
   doc.text(formatAmountArs(quote.total), m + contentW - 2, totalY + 6.6, { align: "right" });
   doc.setTextColor(20, 20, 20);
 
