@@ -277,8 +277,44 @@ function fromCloudJob(row) {
     status: row.status || "Ingresado",
     inDate: row.indate || row.inDate || "",
     promisedDate: row.promiseddate || row.promisedDate || "",
+    observations: row.observations || "",
     outDate: row.outdate || row.outDate || "",
   };
+}
+
+function toCloudJob(row) {
+  return {
+    id: row.id,
+    number: row.number,
+    type: row.type,
+    vehicle: row.vehicle,
+    clientid: row.clientId,
+    priority: row.priority,
+    assignedemployeeid: row.assignedEmployeeId || "",
+    status: row.status,
+    indate: row.inDate || "",
+    promiseddate: row.promisedDate || "",
+    observations: row.observations || "",
+    outdate: row.outDate || "",
+  };
+}
+
+function makeJob(dataIn) {
+  return {
+    id: uid(),
+    number: nextNumber(dataIn.type),
+    type: dataIn.type,
+    vehicle: dataIn.vehicle,
+    clientId: dataIn.clientId,
+    priority: dataIn.priority || "Normal",
+    assignedEmployeeId: dataIn.assignedEmployeeId || "",
+    status: dataIn.status || "Ingresado",
+    inDate: dataIn.inDate || today(),
+    promisedDate: dataIn.promisedDate || today(),
+    observations: dataIn.observations || "",
+    outDate: dataIn.outDate || "",
+  };
+}
 }
 
 function fromCloudQuote(row) {
