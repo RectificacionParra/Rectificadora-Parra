@@ -78,8 +78,10 @@
         </div>
         <div class="action-group">
           <h3>Comercial</h3>
-          <div class="group-buttons one">
-            <button id="btnNewQuote" class="btn-action blue">Nuevo Presupuesto</button>
+          <div class="group-buttons quote-buttons">
+            <button id="btnNewQuoteHead" class="btn-action blue">Presupuesto Tapa</button>
+            <button id="btnNewQuoteMotor" class="btn-action blue">Presupuesto Motor</button>
+            <button id="btnNewQuote" class="btn-action blue">Presupuesto Libre</button>
           </div>
         </div>
       </section>
@@ -226,7 +228,9 @@
         <label>
           Tipo
           <select id="quoteType" required>
-            <option value="presupuesto">Presupuesto</option>
+            <option value="presupuesto_tapa">Presupuesto Tapa</option>
+            <option value="presupuesto_motor">Presupuesto Motor</option>
+            <option value="presupuesto">Presupuesto Libre</option>
             <option value="repuesto">Repuesto</option>
           </select>
         </label>
@@ -234,8 +238,16 @@
           Descripcion
           <input id="quoteDescription" required />
         </label>
+        <section id="quoteCatalogSection" class="quote-catalog hidden">
+          <div class="quote-catalog-head">
+            <strong id="quoteCatalogTitle">Servicios</strong>
+            <button type="button" id="btnAddCatalogService" class="btn-soft">Agregar servicio</button>
+          </div>
+          <div id="quoteCatalogList" class="quote-catalog-list"></div>
+          <p class="quote-catalog-help">Marca los servicios que quieras agregar y modifica el texto si necesitas ajustarlo.</p>
+        </section>
         <label>
-          Items
+          Items / detalle final
           <textarea id="quoteItems" rows="3"></textarea>
         </label>
         <label>
