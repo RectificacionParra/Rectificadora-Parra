@@ -246,25 +246,6 @@ function syncCloudSafely(task) {
     .catch(() => setSyncBadge(false, "Local"));
 }
 
-function fromCloudEmployee(row) {
-  return {
-    id: row.id,
-    name: row.name || "",
-    username: row.username || "",
-    password: row.password || "",
-  };
-}
-
-function fromCloudClient(row) {
-  return {
-    id: row.id,
-    name: row.name || "",
-    phone: row.phone || "",
-    email: row.email || "",
-    address: row.address || "",
-  };
-}
-
 function fromCloudJob(row) {
   return {
     id: row.id,
