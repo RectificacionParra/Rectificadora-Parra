@@ -281,6 +281,7 @@ h3 {
   color: var(--muted);
   display: grid;
   gap: 0.1rem;
+  word-break: break-word;
 }
 
 .job-actions {
