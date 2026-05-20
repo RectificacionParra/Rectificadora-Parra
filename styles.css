@@ -195,6 +195,10 @@ h3 {
   grid-template-columns: 1fr;
 }
 
+.quote-buttons {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .btn-action {
   border: 0;
   color: #fff;
@@ -440,6 +444,57 @@ h3 {
   font-family: inherit;
 }
 
+.quote-catalog {
+  border: 1px solid #d8e1f1;
+  border-radius: 12px;
+  background: #f7faff;
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.quote-catalog-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.quote-catalog-list {
+  display: grid;
+  gap: 0.45rem;
+  max-height: 240px;
+  overflow: auto;
+  padding-right: 0.15rem;
+}
+
+.quote-service-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.55rem;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e4ebf7;
+  border-radius: 10px;
+  padding: 0.45rem 0.55rem;
+}
+
+.quote-service-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.quote-service-input {
+  min-width: 0;
+}
+
+.quote-catalog-help {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
@@ -506,6 +561,10 @@ h3 {
   }
 
   .group-buttons {
+    grid-template-columns: 1fr;
+  }
+
+  .quote-buttons {
     grid-template-columns: 1fr;
   }
 
