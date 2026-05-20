@@ -64,6 +64,7 @@ const el = {
   jobInDate: document.getElementById("jobInDate"),
   jobPromisedDate: document.getElementById("jobPromisedDate"),
   jobOutDate: document.getElementById("jobOutDate"),
+  jobObservations: document.getElementById("jobObservations"),
 
   clientDialog: document.getElementById("clientDialog"),
   clientForm: document.getElementById("clientForm"),
