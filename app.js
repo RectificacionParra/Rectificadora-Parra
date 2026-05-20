@@ -1,6 +1,6 @@
-const STORAGE_KEY = "recticontrol_v3_pro";
+  const STORAGE_KEY = "recticontrol_v3_pro";
 const SESSION_KEY = "recticontrol_session_v1";
-const STATES = ["Ingresado", "En proceso", "Terminado", "En Desarme", "Entregado"];
+const STATES = ["Ingresado", "En proceso", "Terminado", "Cancelado", "Entregado"];
 const PRIORITIES = ["Normal", "Urgente", "Muy urgente"];
 const CLOUD_REFRESH_MS = 20000;
 
@@ -63,8 +63,8 @@ const el = {
   jobStatus: document.getElementById("jobStatus"),
   jobInDate: document.getElementById("jobInDate"),
   jobPromisedDate: document.getElementById("jobPromisedDate"),
-  jobOutDate: document.getElementById("jobOutDate"),
   jobObservations: document.getElementById("jobObservations"),
+  jobOutDate: document.getElementById("jobOutDate"),
 
   clientDialog: document.getElementById("clientDialog"),
   clientForm: document.getElementById("clientForm"),
@@ -246,6 +246,25 @@ function syncCloudSafely(task) {
     .catch(() => setSyncBadge(false, "Local"));
 }
 
+function fromCloudEmployee(row) {
+  return {
+    id: row.id,
+    name: row.name || "",
+    username: row.username || "",
+    password: row.password || "",
+  };
+}
+
+function fromCloudClient(row) {
+  return {
+    id: row.id,
+    name: row.name || "",
+    phone: row.phone || "",
+    email: row.email || "",
+    address: row.address || "",
+  };
+}
+
 function fromCloudJob(row) {
   return {
     id: row.id,
@@ -261,41 +280,6 @@ function fromCloudJob(row) {
     observations: row.observations || "",
     outDate: row.outdate || row.outDate || "",
   };
-}
-
-function toCloudJob(row) {
-  return {
-    id: row.id,
-    number: row.number,
-    type: row.type,
-    vehicle: row.vehicle,
-    clientid: row.clientId,
-    priority: row.priority,
-    assignedemployeeid: row.assignedEmployeeId || "",
-    status: row.status,
-    indate: row.inDate || "",
-    promiseddate: row.promisedDate || "",
-    observations: row.observations || "",
-    outdate: row.outDate || "",
-  };
-}
-
-function makeJob(dataIn) {
-  return {
-    id: uid(),
-    number: nextNumber(dataIn.type),
-    type: dataIn.type,
-    vehicle: dataIn.vehicle,
-    clientId: dataIn.clientId,
-    priority: dataIn.priority || "Normal",
-    assignedEmployeeId: dataIn.assignedEmployeeId || "",
-    status: dataIn.status || "Ingresado",
-    inDate: dataIn.inDate || today(),
-    promisedDate: dataIn.promisedDate || today(),
-    observations: dataIn.observations || "",
-    outDate: dataIn.outDate || "",
-  };
-}
 }
 
 function fromCloudQuote(row) {
@@ -353,6 +337,7 @@ function toCloudJob(row) {
     status: row.status,
     indate: row.inDate || "",
     promiseddate: row.promisedDate || "",
+    observations: row.observations || "",
     outdate: row.outDate || "",
   };
 }
@@ -415,10 +400,9 @@ function persist() {
 function defaultData() {
   return {
     employees: [
-      { id: uid(), name: "Diego Parra", username: "Diego", password: "Diego1234" },
-      { id: uid(), name: "Gaucho", username: "Gaucho", password: "Gaucho123" },
-      { id: uid(), name: "Santiago", username: "Santi", password: "Santi123" },
-      { id: uid(), name: "ThiagoFacha", username: "Thiago", password: "Thiago1234" },
+      { id: uid(), name: "Juan Perez", username: "juan", password: "1234" },
+      { id: uid(), name: "Maria Lopez", username: "maria", password: "1234" },
+      { id: uid(), name: "Admin Taller", username: "admin", password: "admin123" },
     ],
     clients: [
       { id: uid(), name: "Taller Lopez", phone: "5491122334455", email: "taller@mail.com", address: "" },
@@ -662,6 +646,7 @@ function makeJobCard(job) {
     <div>Ingreso: ${escapeHtml(job.inDate)} | Prometida: ${escapeHtml(job.promisedDate)} | Salida: ${escapeHtml(
     job.outDate || "-"
   )}</div>
+    <div>Observaciones: <strong>${escapeHtml(job.observations || "Sin detalle de ingreso")}</strong></div>
   `;
 
   const actions = card.querySelector(".job-actions");
@@ -880,6 +865,7 @@ function onSaveJob(event) {
     status: el.jobStatus.value,
     inDate: el.jobInDate.value || today(),
     promisedDate: el.jobPromisedDate.value || today(),
+    observations: el.jobObservations.value.trim(),
     outDate: el.jobOutDate.value || "",
   };
   if (!payload.vehicle || !payload.clientId || !payload.assignedEmployeeId) return alert("Completa todos los campos requeridos.");
@@ -969,6 +955,7 @@ function openJobDialog({ jobId = "", type = "motor" } = {}) {
   el.jobStatus.value = job?.status || "Ingresado";
   el.jobInDate.value = job?.inDate || today();
   el.jobPromisedDate.value = job?.promisedDate || addDays(today(), 2);
+  el.jobObservations.value = job?.observations || "";
   el.jobOutDate.value = job?.outDate || "";
   el.jobDialog.showModal();
 }
@@ -1105,6 +1092,7 @@ function makeJob(dataIn) {
     status: dataIn.status || "Ingresado",
     inDate: dataIn.inDate || today(),
     promisedDate: dataIn.promisedDate || today(),
+    observations: dataIn.observations || "",
     outDate: dataIn.outDate || "",
   };
 }
@@ -1187,8 +1175,8 @@ async function buildQuotePdfDoc(quote) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.2);
   doc.text("Tapas de cilindro y rectificacion de motores", m + 38, headerY + 15);
-  doc.text("Av.Dr Honorio Poeyrredon 830 - Pilar, Buenos Aires", m + 38, headerY + 20);
-  doc.text("Tel: 0230442-7198", m + 38, headerY + 25);
+  doc.text("Av. Mitre 1234 - Pilar, Buenos Aires", m + 38, headerY + 20);
+  doc.text("Tel: 2304-427198", m + 38, headerY + 25);
   doc.text("R.U.T.: 25134267", m + 38, headerY + 30);
 
   doc.setFont("helvetica", "bold");
@@ -1210,15 +1198,15 @@ async function buildQuotePdfDoc(quote) {
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9.2);
-  doc.text("Señor:", m + 2, infoY + 4.5);
+  doc.text("Senor:", m + 2, infoY + 4.5);
   doc.text("Calle:", m + 2, infoY + 10.5);
   doc.text("Ciudad:", m + 2, infoY + 16.5);
-  doc.text("Condiciones:", m  2, infoY + 22.5);
+  doc.text("Condiciones:", m + 2, infoY + 22.5);
   doc.setFont("helvetica", "normal");
   doc.text(client?.name || "-", m + 20, infoY + 4.5);
   doc.text(client?.address || "-", m + 20, infoY + 10.5);
   doc.text("Pilar", m + 20, infoY + 16.5);
-  doc.text("Validez 15 dias - Suejeto a Modificacion sin Previo Aviso", m + 30, infoY + 22.5);
+  doc.text("Validez 7 dias - Sujeto a revision final", m + 30, infoY + 22.5);
 
   const tableY = infoY + infoH;
   const tableH = 214;
@@ -1256,13 +1244,13 @@ async function buildQuotePdfDoc(quote) {
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11.2);
-  doc.text("TOTAL", m + descW + 3, totalY + 7.7);
+  doc.text("TOTAL", m + descW + 3, totalY + 6.6);
   doc.text(formatAmountArs(quote.total), m + contentW - 2, totalY + 6.6, { align: "right" });
   doc.setTextColor(20, 20, 20);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("ORIGINAL", m + contentW - 8, pageH - 20, { angle: 270, align: "right" });
+  doc.text("DUPLICADO", m + contentW - 8, pageH - 20, { angle: 270, align: "right" });
 
   return doc;
 }
