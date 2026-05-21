@@ -566,21 +566,6 @@ h1, h2, h3 {
   z-index: 1;
   pointer-events: none;
 }
-
-.side-animation {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  width: 10vw; 
-  min-width: 80px;
-  max-width: 260px;
-  z-index: 99999 !important; /* Pasamos los lásers al frente absoluto de la pantalla */
-  pointer-events: none;
-  opacity: 0.85; 
-  overflow: hidden;
-  transform: translateZ(0); /* Evita que el navegador lo oculte detrás del fondo */
-}
-
 .left-side {
   left: 0 !important;
   border-right: 1px solid rgba(37, 99, 235, 0.15);
