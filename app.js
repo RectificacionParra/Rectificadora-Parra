@@ -1,4 +1,4 @@
-  const STORAGE_KEY = "recticontrol_v3_pro";
+const STORAGE_KEY = "recticontrol_v3_pro";
 const SESSION_KEY = "recticontrol_session_v1";
 const STATES = ["Ingresado", "En proceso", "Terminado", "Cancelado", "Entregado"];
 const PRIORITIES = ["Normal", "Urgente", "Muy urgente"];
@@ -25,6 +25,47 @@ const cloud = {
   client: null,
 };
 
+const DEFAULT_SERVICE_CATALOG = {
+  presupuesto_tapa: [
+    "Lavado Potasa",
+    "Servicio de Tapa",
+    "Prueba Hidraulica",
+    "Embujado",
+    "Plano De Tapa",
+    "Plano De Tapa Trasero",
+    "Plano de Tapa Lateral",
+    "Arbol de leva",
+    "Botadores",
+    "Valvulas De Escape",
+    "Valvulas De Admision",
+    "Reten de Valvula",
+    "Reten De Arbol De Leva",
+    "Reten de Distribucion",
+    "Junta de Descarbonizacion",
+    "Junta de Tapa De Cilindro",
+    "Bulones de tapa de cilindro",
+    "Sellador",
+    "Junta de Carter",
+    "Junta de Tapa de Valvula",
+  ],
+  presupuesto_motor: [
+    "Plano de Block",
+    "Rectificado de Cilindros",
+    "Emcamisado",
+    "Subconjunto",
+    "Conjunto",
+    "Prueba Hidraulica",
+    "Bruñido de cilindros",
+    "Enchavetado De Block",
+    "Rectificado De Arbol De Levas",
+    "Alesado de bancada",
+    "Cambio de metales",
+    "Armado de motor",
+    "Limpieza general",
+    "Control de cigüeñal",
+  ],
+};
+
 const el = {
   loginScreen: document.getElementById("loginScreen"),
   appShell: document.getElementById("appShell"),
@@ -45,6 +86,8 @@ const el = {
   btnNewMotor: document.getElementById("btnNewMotor"),
   btnNewHead: document.getElementById("btnNewHead"),
   btnNewPart: document.getElementById("btnNewPart"),
+  btnNewQuoteHead: document.getElementById("btnNewQuoteHead"),
+  btnNewQuoteMotor: document.getElementById("btnNewQuoteMotor"),
   btnNewQuote: document.getElementById("btnNewQuote"),
   searchWrap: document.getElementById("searchWrap"),
   searchInput: document.getElementById("searchInput"),
@@ -87,6 +130,10 @@ const el = {
   quoteClient: document.getElementById("quoteClient"),
   quoteType: document.getElementById("quoteType"),
   quoteDescription: document.getElementById("quoteDescription"),
+  quoteCatalogSection: document.getElementById("quoteCatalogSection"),
+  quoteCatalogTitle: document.getElementById("quoteCatalogTitle"),
+  quoteCatalogList: document.getElementById("quoteCatalogList"),
+  btnAddCatalogService: document.getElementById("btnAddCatalogService"),
   quoteItems: document.getElementById("quoteItems"),
   quoteLabor: document.getElementById("quoteLabor"),
   quoteParts: document.getElementById("quoteParts"),
@@ -114,12 +161,16 @@ function bindEvents() {
   el.btnNewMotor.addEventListener("click", () => openJobDialog({ type: "motor" }));
   el.btnNewHead.addEventListener("click", () => openJobDialog({ type: "tapa" }));
   el.btnNewPart.addEventListener("click", () => openQuoteDialog({ type: "repuesto" }));
+  el.btnNewQuoteHead.addEventListener("click", () => openQuoteDialog({ type: "presupuesto_tapa" }));
+  el.btnNewQuoteMotor.addEventListener("click", () => openQuoteDialog({ type: "presupuesto_motor" }));
   el.btnNewQuote.addEventListener("click", () => openQuoteDialog({ type: "presupuesto" }));
 
   el.jobForm.addEventListener("submit", onSaveJob);
   el.clientForm.addEventListener("submit", onSaveClient);
   el.employeeForm.addEventListener("submit", onSaveEmployee);
   el.quoteForm.addEventListener("submit", onSaveQuote);
+  el.quoteType.addEventListener("change", onQuoteTypeChange);
+  el.btnAddCatalogService.addEventListener("click", onAddCatalogService);
 
   el.tabButtons.forEach((btn) =>
     btn.addEventListener("click", () => {
@@ -170,7 +221,13 @@ async function pullCloudDataAndRender(options = {}) {
     data.jobs = (jobsRes.data || []).map(fromCloudJob);
     data.quotes = (quotesRes.data || []).map(fromCloudQuote);
     data.history = (historyRes.data || []).map(fromCloudHistory);
-    data.counters = settingsRes.data?.counters || data.counters || { motor: 0, tapa: 0, repuesto: 0, presupuesto: 0 };
+    data.counters = {
+      motor: Number(settingsRes.data?.counters?.motor ?? data.counters?.motor ?? 0),
+      tapa: Number(settingsRes.data?.counters?.tapa ?? data.counters?.tapa ?? 0),
+      repuesto: Number(settingsRes.data?.counters?.repuesto ?? data.counters?.repuesto ?? 0),
+      presupuesto: Number(settingsRes.data?.counters?.presupuesto ?? data.counters?.presupuesto ?? 0),
+    };
+    data.serviceCatalog = normalizeServiceCatalog(settingsRes.data?.counters?.serviceCatalog || data.serviceCatalog);
     persist();
     hydrateSelects();
     renderActiveTab();
@@ -234,7 +291,13 @@ async function deleteTableRow(table, id) {
 
 async function pushCounters() {
   if (!cloud.enabled || !cloud.client) return;
-  const payload = { id: 1, counters: data.counters };
+  const payload = {
+    id: 1,
+    counters: {
+      ...data.counters,
+      serviceCatalog: data.serviceCatalog,
+    },
+  };
   const { error } = await cloud.client.from("app_settings").upsert(payload);
   if (error) throw error;
 }
@@ -384,10 +447,11 @@ function loadData() {
       employees: Array.isArray(parsed.employees) ? parsed.employees : [],
       clients: Array.isArray(parsed.clients) ? parsed.clients : [],
       jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
-      quotes: Array.isArray(parsed.quotes) ? parsed.quotes : [],
-      history: Array.isArray(parsed.history) ? parsed.history : [],
-      counters: parsed.counters || { motor: 0, tapa: 0, repuesto: 0, presupuesto: 0 },
-    };
+    quotes: Array.isArray(parsed.quotes) ? parsed.quotes : [],
+    history: Array.isArray(parsed.history) ? parsed.history : [],
+    serviceCatalog: normalizeServiceCatalog(parsed.serviceCatalog),
+    counters: parsed.counters || { motor: 0, tapa: 0, repuesto: 0, presupuesto: 0 },
+  };
   } catch {
     return defaultData();
   }
@@ -411,7 +475,31 @@ function defaultData() {
     jobs: [],
     quotes: [],
     history: [],
+    serviceCatalog: cloneDefaultServiceCatalog(),
     counters: { motor: 0, tapa: 0, repuesto: 0, presupuesto: 0 },
+  };
+}
+
+function cloneDefaultServiceCatalog() {
+  return {
+    presupuesto_tapa: [...DEFAULT_SERVICE_CATALOG.presupuesto_tapa],
+    presupuesto_motor: [...DEFAULT_SERVICE_CATALOG.presupuesto_motor],
+  };
+}
+
+function normalizeServiceCatalog(serviceCatalog) {
+  const defaults = cloneDefaultServiceCatalog();
+  if (!serviceCatalog || typeof serviceCatalog !== "object") return defaults;
+
+  return {
+    presupuesto_tapa:
+      Array.isArray(serviceCatalog.presupuesto_tapa) && serviceCatalog.presupuesto_tapa.length
+        ? serviceCatalog.presupuesto_tapa.filter(Boolean)
+        : defaults.presupuesto_tapa,
+    presupuesto_motor:
+      Array.isArray(serviceCatalog.presupuesto_motor) && serviceCatalog.presupuesto_motor.length
+        ? serviceCatalog.presupuesto_motor.filter(Boolean)
+        : defaults.presupuesto_motor,
   };
 }
 
@@ -918,6 +1006,7 @@ function onSaveEmployee(event) {
 
 function onSaveQuote(event) {
   event.preventDefault();
+  syncQuoteItemsFromCatalog();
   const isEditing = !!el.quoteId.value;
   const existing = isEditing ? getQuote(el.quoteId.value) : null;
   const labor = Number(el.quoteLabor.value || 0);
@@ -957,7 +1046,7 @@ function openJobDialog({ jobId = "", type = "motor" } = {}) {
   el.jobPromisedDate.value = job?.promisedDate || addDays(today(), 2);
   el.jobObservations.value = job?.observations || "";
   el.jobOutDate.value = job?.outDate || "";
-  el.jobDialog.showModal();
+  safeOpenDialog(el.jobDialog, "No se pudo abrir el formulario de trabajo.");
 }
 
 function openClientDialog(clientId = "") {
@@ -968,7 +1057,7 @@ function openClientDialog(clientId = "") {
   el.clientPhone.value = client?.phone || "";
   el.clientEmail.value = client?.email || "";
   el.clientAddress.value = client?.address || "";
-  el.clientDialog.showModal();
+  safeOpenDialog(el.clientDialog, "No se pudo abrir el formulario de cliente.");
 }
 
 function openEmployeeDialog(employeeId = "") {
@@ -978,21 +1067,143 @@ function openEmployeeDialog(employeeId = "") {
   el.employeeName.value = emp?.name || "";
   el.employeeUsername.value = emp?.username || "";
   el.employeePassword.value = emp?.password || "";
-  el.employeeDialog.showModal();
+  safeOpenDialog(el.employeeDialog, "No se pudo abrir el formulario de empleado.");
 }
 
 function openQuoteDialog({ quoteId = "", clientId = "", type = "presupuesto" } = {}) {
-  el.quoteForm.reset();
-  const quote = quoteId ? getQuote(quoteId) : null;
-  el.quoteId.value = quote?.id || "";
-  el.quoteType.value = quote?.type || type;
-  if (quote?.clientId || clientId) el.quoteClient.value = quote?.clientId || clientId;
-  el.quoteDescription.value = quote?.description || "";
-  el.quoteItems.value = quote?.items || "";
-  el.quoteLabor.value = quote?.labor ?? 0;
-  el.quoteParts.value = quote?.parts ?? 0;
-  el.quoteDate.value = quote?.date || today();
-  el.quoteDialog.showModal();
+  try {
+    data.serviceCatalog = normalizeServiceCatalog(data.serviceCatalog);
+    hydrateSelects();
+    el.quoteForm.reset();
+    const quote = quoteId ? getQuote(quoteId) : null;
+    el.quoteId.value = quote?.id || "";
+    el.quoteType.value = quote?.type || type;
+    if (quote?.clientId || clientId) el.quoteClient.value = quote?.clientId || clientId;
+    el.quoteDescription.value = quote?.description || "";
+    el.quoteItems.value = quote?.items || "";
+    el.quoteLabor.value = quote?.labor ?? 0;
+    el.quoteParts.value = quote?.parts ?? 0;
+    el.quoteDate.value = quote?.date || today();
+    renderQuoteCatalog();
+    hydrateSelectedCatalogServices(quote?.items || "");
+    safeOpenDialog(el.quoteDialog, "No se pudo abrir el presupuesto.");
+  } catch (error) {
+    console.error("Error abriendo presupuesto", error);
+    alert("No se pudo abrir el presupuesto. Recarga la pagina e intenta otra vez.");
+  }
+}
+
+function onQuoteTypeChange() {
+  renderQuoteCatalog();
+  syncQuoteItemsFromCatalog();
+}
+
+function renderQuoteCatalog() {
+  const type = el.quoteType.value;
+  const usesCatalog = type === "presupuesto_tapa" || type === "presupuesto_motor";
+  el.quoteCatalogSection.classList.toggle("hidden", !usesCatalog);
+  if (!usesCatalog) {
+    el.quoteCatalogList.innerHTML = "";
+    return;
+  }
+
+  const catalog = data.serviceCatalog[type] || [];
+  el.quoteCatalogTitle.textContent = type === "presupuesto_tapa" ? "Servicios de Tapa" : "Servicios de Motor";
+  el.quoteCatalogList.innerHTML = "";
+
+  catalog.forEach((service, index) => {
+    const row = document.createElement("label");
+    row.className = "quote-service-row";
+    const check = document.createElement("input");
+    check.type = "checkbox";
+    check.className = "quote-service-check";
+    check.dataset.index = String(index);
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "quote-service-input";
+    input.dataset.index = String(index);
+    input.value = service;
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "btn-danger btn-small";
+    remove.textContent = "Quitar";
+
+    row.append(check, input, remove);
+
+    check.addEventListener("change", syncQuoteItemsFromCatalog);
+    input.addEventListener("input", () => {
+      data.serviceCatalog[type][index] = input.value.trim();
+      persist();
+      syncCloudSafely(() => pushCounters());
+      syncQuoteItemsFromCatalog();
+    });
+    remove.addEventListener("click", () => {
+      data.serviceCatalog[type].splice(index, 1);
+      persist();
+      syncCloudSafely(() => pushCounters());
+      renderQuoteCatalog();
+      syncQuoteItemsFromCatalog();
+    });
+    el.quoteCatalogList.append(row);
+  });
+}
+
+function hydrateSelectedCatalogServices(itemsText) {
+  const type = el.quoteType.value;
+  if (!(type === "presupuesto_tapa" || type === "presupuesto_motor")) return;
+  const selected = new Set(
+    String(itemsText || "")
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+  );
+  [...el.quoteCatalogList.querySelectorAll(".quote-service-row")].forEach((row) => {
+    const input = row.querySelector(".quote-service-input");
+    const check = row.querySelector(".quote-service-check");
+    check.checked = selected.has(input.value.trim());
+  });
+}
+
+function syncQuoteItemsFromCatalog() {
+  const type = el.quoteType.value;
+  if (!(type === "presupuesto_tapa" || type === "presupuesto_motor")) return;
+  const selected = [...el.quoteCatalogList.querySelectorAll(".quote-service-row")]
+    .map((row) => ({
+      checked: row.querySelector(".quote-service-check").checked,
+      text: row.querySelector(".quote-service-input").value.trim(),
+    }))
+    .filter((row) => row.checked && row.text)
+    .map((row) => row.text);
+  el.quoteItems.value = selected.join("\n");
+}
+
+function onAddCatalogService() {
+  const type = el.quoteType.value;
+  if (!(type === "presupuesto_tapa" || type === "presupuesto_motor")) return;
+  data.serviceCatalog[type].push("Nuevo servicio");
+  persist();
+  syncCloudSafely(() => pushCounters());
+  renderQuoteCatalog();
+  syncQuoteItemsFromCatalog();
+}
+
+function safeOpenDialog(dialog, message) {
+  if (!dialog) {
+    alert(message);
+    return;
+  }
+  if (dialog.open) dialog.close();
+  if (typeof dialog.showModal === "function") {
+    dialog.showModal();
+    return;
+  }
+  if (typeof dialog.show === "function") {
+    dialog.show();
+    return;
+  }
+  dialog.setAttribute("open", "open");
 }
 
 function updateJobStatus(jobId, status) {
@@ -1385,6 +1596,7 @@ function importData(event) {
         jobs: parsed.jobs,
         quotes: parsed.quotes,
         history: Array.isArray(parsed.history) ? parsed.history : [],
+        serviceCatalog: normalizeServiceCatalog(parsed.serviceCatalog),
         counters: parsed.counters || { motor: 0, tapa: 0, repuesto: 0, presupuesto: 0 },
       };
       persist();
