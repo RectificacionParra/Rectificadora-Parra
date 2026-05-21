@@ -11,20 +11,6 @@ const money = (value) =>
     Number(value || 0)
   );
 
-let activeTab = "trabajos";
-let currentUser = null;
-let toastTimer = null;
-let data = loadData();
-let cloudPollTimer = null;
-let cloudSubscriptions = [];
-let lastLocalStatusMutationAt = 0;
-let quoteLogoDataUrl = null;
-
-const cloud = {
-  enabled: false,
-  client: null,
-};
-
 const DEFAULT_SERVICE_CATALOG = {
   presupuesto_tapa: [
     "Lavado Potasa",
@@ -66,6 +52,19 @@ const DEFAULT_SERVICE_CATALOG = {
   ],
 };
 
+let activeTab = "trabajos";
+let currentUser = null;
+let toastTimer = null;
+let data = loadData();
+let cloudPollTimer = null;
+let cloudSubscriptions = [];
+let lastLocalStatusMutationAt = 0;
+let quoteLogoDataUrl = null;
+
+const cloud = {
+  enabled: false,
+  client: null,
+};
 const el = {
   loginScreen: document.getElementById("loginScreen"),
   appShell: document.getElementById("appShell"),
