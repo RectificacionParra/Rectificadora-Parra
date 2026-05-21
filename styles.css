@@ -570,14 +570,15 @@ h1, h2, h3 {
   position: fixed;
   top: 0;
   bottom: 0;
+  height: 100vh; /* Fuerza a que cubra todo el alto del monitor */
   width: 10vw; 
   min-width: 80px;
   max-width: 260px;
-  z-index: 99999 !important; /* Pasa al frente absoluto */
+  z-index: 99999 !important;
   pointer-events: none;
   opacity: 0.85; 
   overflow: hidden;
-  transform: translateZ(0); /* Forzado de capa 3D */
+  transform: translateZ(0);
 }
 
 /* El resto de tu código sigue exactamente igual abajo: */
