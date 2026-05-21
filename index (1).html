@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rectificación Parra | Panel Taller</title>
+    <meta name="theme-color" content="#1f3f78" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&family=Nunito:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="loginScreen" class="screen-login">
+      <form id="loginForm" class="login-card">
+        <img src="./logo-parra.jpeg" alt="Logo Rectificacion Parra" class="login-logo" />
+        <h1>RECTIFICACIÓN PARRA</h1>
+        <p>Ingreso de empleados</p>
+        <label>
+          Usuario
+          <input id="loginUser" required placeholder="usuario" />
+        </label>
+        <label>
+          Contraseña
+          <input id="loginPassword" required type="password" placeholder="********" />
+        </label>
+        <small id="loginError" class="hidden" style="color: var(--red); font-weight: 700; margin-top: 0.2rem;"></small>
+        <button type="submit" class="btn-primary">Entrar</button>
+      </form>
+    </div>
+
+    <div id="appShell" class="app-shell hidden">
+      <header class="top-header">
+        <div class="brand-wrap">
+          <img src="./logo-parra.jpeg" alt="Logo Rectificacion Parra" class="brand-logo" />
+          <div>
+            <h2>RECTIFICACIÓN PARRA</h2>
+            <p id="employeeName">...</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <div id="syncBadge" class="sync-badge online">Sincronizado</div>
+          <button id="btnLogout" class="btn-danger">Salir</button>
+        </div>
+      </header>
+
+      <section class="dashboard-row">
+        <div class="dash-box">
+          <span>Ingresados</span>
+          <strong id="dashIngresados">0</strong>
+        </div>
+        <div class="dash-box">
+          <span>En Proceso</span>
+          <strong id="dashProceso">0</strong>
+        </div>
+        <div class="dash-box">
+          <span>Terminados</span>
+          <strong id="dashTerminados">0</strong>
+        </div>
+      </section>
+
+      <section class="actions-grid">
+        <div class="action-group">
+          <h3>Gestión del taller</h3>
+          <div class="group-buttons">
+            <button id="btnNewJob" class="btn-action blue">Nuevo Trabajo</button>
+            <button id="btnNewClient" class="btn-action orange">Nuevo Cliente</button>
+            <button id="btnNewQuote" class="btn-action green">Nuevo Presupuesto</button>
+          </div>
+        </div>
+        <div class="action-group">
+          <h3>Administración</h3>
+          <div class="group-buttons">
+            <button id="btnCatalog" class="btn-action blue">Catálogo Precios</button>
+            <button id="btnBackup" class="btn-action orange">Copia Local</button>
+            <button id="btnStats" class="btn-action green">Ver Balances</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="search-wrap">
+        <input id="searchInput" placeholder="Buscar por patente, vehículo, motor, cliente o nro de orden..." />
+      </div>
+
+      <main class="main-view">
+        <h2 id="viewTitle" class="section-title">Trabajos activos</h2>
+        <div id="cardsGrid" class="cards-grid"></div>
+      </main>
+
+      <nav class="bottom-tabs">
+        <button class="tab-btn active" data-tab="en proceso">activos</button>
+        <button class="tab-btn" data-tab="terminados">terminados</button>
+        <button class="tab-btn" data-tab="entregados">entregados</button>
+        <button class="tab-btn" data-tab="presupuestos">presupuestos</button>
+        <button class="tab-btn" data-tab="todos">todos</button>
+      </nav>
+    </div>
+
+    <!-- Modales y Diálogos -->
+    <dialog id="jobDialog" class="form-dialog">
+      <form id="jobForm" class="form-grid">
+        <h3 id="jobDialogTitle">Nuevo Trabajo</h3>
+        <input type="hidden" id="jobId" />
+        <label>
+          Cliente
+          <select id="jobClientId" required></select>
+        </label>
+        <label>
+          Vehículo / Modelo
+          <input id="jobVehicle" required placeholder="Ej: Fiat Palio 1.4" />
+        </label>
+        <label>
+          Nro Motor / Chasis
+          <input id="jobMotorNumber" placeholder="Opcional" />
+        </label>
+        <label>
+          Patente / Dominio
+          <input id="jobPlate" placeholder="Ej: AA123BB" />
+        </label>
+        <label>
+          Detalle del Trabajo a Realizar
+          <textarea id="jobDescription" rows="3" required placeholder="Ej: Rectificación de tapa completa, retenes nuevos y plano..."></textarea>
+        </label>
+        <label>
+          Prioridad
+          <select id="jobPriority"></select>
+        </label>
+        <label>
+          Estado
+          <select id="jobStatus"></select>
+        </label>
+        <label>
+          Entrega Prometida
+          <input id="jobPromisedDate" type="date" />
+        </label>
+        <div class="dialog-actions">
+          <button type="button" data-close="jobDialog" class="btn-soft">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="clientDialog" class="form-dialog">
+      <form id="clientForm" class="form-grid">
+        <h3>Nuevo Cliente</h3>
+        <label>
+          Nombre Completo / Razón Social
+          <input id="clientName" required placeholder="Ej: Juan Pérez o Taller Mecánica Tito" />
+        </label>
+        <label>
+          Teléfono / WhatsApp
+          <input id="clientPhone" type="tel" placeholder="Ej: 1123456789" />
+        </label>
+        <label>
+          Localidad / Dirección
+          <input id="clientAddress" placeholder="Opcional" />
+        </label>
+        <div class="dialog-actions">
+          <button type="button" data-close="clientDialog" class="btn-soft">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar Cliente</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="catalogDialog" class="form-dialog" style="width:min(650px, 96vw);">
+      <form id="catalogForm" class="form-grid">
+        <h3>Lista de Precios Base</h3>
+        <div id="catalogContainer" style="max-height: 50vh; overflow-y: auto; display: grid; gap: 0.8rem;"></div>
+        <div class="dialog-actions" style="margin-top: 1rem;">
+          <button type="button" data-close="catalogDialog" class="btn-soft">Cerrar</button>
+          <button type="submit" class="btn-primary">Actualizar Precios</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="statsDialog" class="form-dialog">
+      <div class="form-grid">
+        <h3>Balances y Estadísticas</h3>
+        <div style="display: grid; gap: 1rem;">
+          <div class="dash-box">
+            <span>Recaudación del Mes (Entregados)</span>
+            <strong id="statRevenue" style="color: var(--green);">$ 0,00</strong>
+          </div>
+          <div class="dash-box">
+            <span>Trabajos en el taller actualmente</span>
+            <strong id="statActiveCount">0</strong>
+          </div>
+          <div class="dash-box">
+            <span>Presupuestos pendientes aprobados</span>
+            <strong id="statPendingQuotes">0</strong>
+          </div>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" data-close="statsDialog" class="btn-primary">Entendido</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="quoteDialog" class="form-dialog" style="width:min(700px, 96vw);">
+      <form id="quoteForm" class="form-grid">
+        <h3 id="quoteDialogTitle">Nuevo Presupuesto</h3>
+        <input type="hidden" id="quoteId" />
+        <label>
+          Cliente
+          <select id="quoteClientId" required></select>
+        </label>
+        <label>
+          Vehículo / Motor
+          <input id="quoteVehicle" required placeholder="Ej: Kangoo 1.6 16v K4M" />
+        </label>
+        <section class="quote-catalog">
+          <div class="quote-catalog-head">
+            <strong id="quoteCatalogTitle">Servicios</strong>
+            <button type="button" id="btnAddCatalogService" class="btn-soft">Agregar servicio</button>
+          </div>
+          <div id="quoteCatalogList" class="quote-catalog-list"></div>
+          <p class="quote-catalog-help">Marca los servicios que quieras agregar y modifica el texto si necesitas ajustarlo.</p>
+        </section>
+        <label>
+          Items / detalle final
+          <textarea id="quoteItems" rows="3"></textarea>
+        </label>
+        <label>
+          Total ($)
+          <input id="quoteTotal" type="number" min="0" step="0.01" required />
+        </label>
+        <label>
+          Fecha
+          <input id="quoteDate" type="date" required />
+        </label>
+        <div class="dialog-actions">
+          <button type="button" data-close="quoteDialog" class="btn-soft">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <template id="jobCardTemplate">
+      <article class="job-card">
+        <div class="job-main"></div>
+        <div class="job-meta"></div>
+        <div class="job-actions"></div>
+      </article>
+    </template>
+
+    <!-- LAS ANIMACIONES FUERA DEL TEMPLATE, VISIBLES DIRECTO EN EL BODY -->
+    <div class="side-animation left-side"></div>
+    <div class="side-animation right-side"></div>
+    <div class="ambient-glow"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
