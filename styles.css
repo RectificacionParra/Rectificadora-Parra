@@ -1,23 +1,21 @@
 :root {
-  /* Nueva paleta: Taller Mecánico Premium & Precisión */
-  --bg: #0f172a; /* Fondo oscuro industrial para el exterior */
-  --app-bg: #f8fafc; /* Fondo de la aplicación limpio y claro */
-  --card: #ffffff;
-  --line: #e2e8f0;
-  --ink: #0f172a; /* Texto principal casi negro */
-  --muted: #64748b; /* Texto secundario gris acero */
+  /* Nueva Paleta: Taller Mecánico Premium (Basado en referencia) */
+  --bg-dark: #07090c;       /* Negro profundo de fondo */
+  --header-bg: #141c2a;     /* Azul noche oscuro industrial */
+  --card-dark: #1a2233;     /* Gris azulado muy oscuro para tarjetas */
+  --line-metal: #2d384d;    /* Gris metal para bordes y líneas */
+  --ink-light: #f1f5f9;     /* Blanco limpio para texto principal */
+  --muted-light: #94a3b8;   /* Gris acero para texto secundario y sombras */
   
-  /* Colores de marca y estados refinados */
-  --blue: #2563eb; /* Azul cobalto de precisión */
-  --blue-hover: #1d4ed8;
-  --green: #10b981; /* Verde esmeralda para éxitos/ingresos */
-  --orange: #f59e0b; /* Ámbar para advertencias/proceso */
-  --red: #ef4444; /* Rojo limpio para urgencias/alertas */
+  /* Colores de acento refinados */
+  --blue-action: #1e60dc;   /* Azul eléctrico precisión */
+  --blue-hover: #3777f1;
+  --star-orange: #f59e0b;   /* Ámbar de la estrella central (Referencia) */
+  --green: #10b981;         /* Verde limpio para ingresos */
+  --red: #ef4444;           /* Rojo para urgencias y salir */
   
-  --warning: #b45309;
-  --warning-bg: #fef3c7;
-  --shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 8px -1px rgba(15, 23, 42, 0.04);
-  --shadow-lg: 0 20px 25px -5px rgba(15, 23, 42, 0.15);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
 }
 
 * {
@@ -28,9 +26,10 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Inter", "Nunito", sans-serif;
-  background: radial-gradient(circle at top right, #1e293b, #0f172a); /* Fondo exterior oscuro y ejecutivo */
-  color: var(--ink);
+  font-family: "Inter", "Nunito", sans-serif; /* Prioridad Inter para look técnico */
+  background-color: var(--bg-dark);
+  background-image: radial-gradient(circle at center, #1a2233, #07090c 70%); /* Fondo con degrade sutil industrial */
+  color: var(--ink-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,7 +45,7 @@ h1, h2, h3 {
   display: none !important;
 }
 
-/* --- LOGIN REFINADO --- */
+/* --- LOGIN PURE-DARK --- */
 .screen-login {
   min-height: 100vh;
   display: grid;
@@ -57,9 +56,9 @@ h1, h2, h3 {
 
 .login-card {
   width: min(400px, 92vw);
-  background: var(--card);
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  background: var(--card-dark);
+  border: 1px solid var(--line-metal);
+  border-radius: 12px;
   box-shadow: var(--shadow-lg);
   padding: 2.5rem 2rem;
   display: grid;
@@ -70,7 +69,8 @@ h1, h2, h3 {
 .login-card h1 {
   font-size: 1.4rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--blue-action);
+  letter-spacing: 0.1em;
 }
 
 .login-logo {
@@ -78,8 +78,8 @@ h1, h2, h3 {
   height: 90px;
   object-fit: cover;
   margin: 0 auto 0.5rem;
-  border-radius: 50%; /* Logo circular queda mucho más corporativo */
-  border: 3px solid #f1f5f9;
+  border-radius: 50%;
+  border: 3px solid var(--line-metal);
   box-shadow: var(--shadow);
 }
 
@@ -89,32 +89,46 @@ h1, h2, h3 {
   gap: 0.4rem;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #475569;
+  color: var(--muted-light);
+}
+
+.login-card input {
+  background: #0d1117; /* Fondo inputs extra oscuro */
+  border: 1px solid var(--line-metal);
+  color: var(--ink-light);
+  border-radius: 6px;
+  padding: 0.7rem;
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: var(--blue-action);
+  box-shadow: 0 0 0 3px rgba(30, 96, 220, 0.2);
 }
 
 /* --- ESTRUCTURA GENERAL DE LA APP --- */
 .app-shell {
   width: min(1200px, 98vw);
   margin: 1.5rem auto;
-  background: var(--app-bg);
-  border-radius: 16px;
+  background: var(--bg-dark);
+  border-radius: 12px;
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   display: grid;
   grid-template-rows: auto auto auto auto 1fr auto;
-  border: 1px solid #334155;
+  border: 1px solid var(--line-metal);
 }
 
-/* Header de Alta Gama */
+/* Header Ejecutivo e Industrial */
 .top-header {
-  background: #0f172a; /* Negro metalizado */
-  color: #fff;
+  background: var(--header-bg);
+  color: var(--ink-light);
   padding: 1.2rem 1.5rem;
   display: flex;
   justify-content: space-between;
   gap: 1rem;
   align-items: center;
-  border-bottom: 2px solid #2563eb; /* Línea de acento azul cobalto */
+  border-bottom: 2px solid var(--star-orange); /* Línea de acento naranja ámbar */
 }
 
 .brand-wrap {
@@ -127,6 +141,7 @@ h1, h2, h3 {
   font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: 0.05em;
+  color: var(--star-orange); /* Título de marca en naranja */
 }
 
 .brand-logo {
@@ -134,13 +149,13 @@ h1, h2, h3 {
   height: 50px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid #334155;
+  border: 1px solid var(--line-metal);
 }
 
 .top-header p {
   margin: 0.15rem 0 0;
   font-size: 0.8rem;
-  color: #94a3b8;
+  color: var(--muted-light);
   font-weight: 600;
 }
 
@@ -151,9 +166,9 @@ h1, h2, h3 {
   align-items: center;
 }
 
-/* Indicadores y badges */
+/* Badges de Sincronización */
 .sync-badge {
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 0.3rem 0.7rem;
   font-weight: 700;
   font-size: 0.75rem;
@@ -162,13 +177,15 @@ h1, h2, h3 {
 }
 
 .sync-badge.online {
-  background: #bbf7d0;
-  color: #15803d;
+  background: #064e3b;
+  color: var(--green);
+  border: 1px solid #10b98140;
 }
 
 .sync-badge.offline {
-  background: #fee2e2;
-  color: #991b1b;
+  background: #7f1d1d;
+  color: var(--red);
+  border: 1px solid #ef444440;
 }
 
 /* --- CUADROS DE MANDO (DASHBOARD) --- */
@@ -180,21 +197,20 @@ h1, h2, h3 {
 }
 
 .dash-box {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  background: var(--card-dark);
+  border: 1px solid var(--line-metal);
+  border-radius: 8px;
   padding: 1rem 1.2rem;
   box-shadow: var(--shadow);
   position: relative;
-  overflow: hidden;
 }
 
 .dash-box::before {
   content: '';
   position: absolute;
   top: 0; left: 0; bottom: 0;
-  width: 4px;
-  background: var(--blue); /* Detalle visual al costado */
+  width: 3px;
+  background: var(--blue-action);
 }
 
 .dash-box span {
@@ -202,14 +218,14 @@ h1, h2, h3 {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--muted);
+  color: var(--muted-light);
 }
 
 .dash-box strong {
   display: block;
   font-size: 1.8rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--blue-hover);
   margin-top: 0.2rem;
 }
 
@@ -222,9 +238,9 @@ h1, h2, h3 {
 }
 
 .action-group {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  background: var(--card-dark);
+  border: 1px solid var(--line-metal);
+  border-radius: 8px;
   padding: 1rem;
   box-shadow: var(--shadow);
 }
@@ -235,7 +251,7 @@ h1, h2, h3 {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 0.75rem;
-  color: #475569;
+  color: var(--ink-light);
 }
 
 .group-buttons {
@@ -244,27 +260,30 @@ h1, h2, h3 {
   gap: 0.6rem;
 }
 
-/* Botonera de acciones refinada */
+/* Botonera de acciones refinada - Look Metal */
 .btn-action {
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   color: #fff;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 0.75rem 0.5rem;
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0) 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), var(--shadow);
 }
 
 .btn-action:hover {
   transform: translateY(-1px);
-  filter: brightness(0.9);
+  filter: brightness(1.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), var(--shadow);
 }
 
-.btn-action.green { background: #10b981; }
-.btn-action.orange { background: #f59e0b; }
-.btn-action.red { background: #ef4444; }
-.btn-action.blue { background: #3b82f6; }
+/* Colores de botones basados en su función (Naranja/Verde/Rojo) */
+.btn-action.green { background-color: #166534; }
+.btn-action.orange { background-color: #9a6616; }
+.btn-action.red { background-color: #991b1b; }
+.btn-action.blue { background-color: #1e3a8a; }
 
 /* --- BUSCADOR --- */
 .search-wrap {
@@ -273,30 +292,38 @@ h1, h2, h3 {
 
 .search-wrap input {
   width: 100%;
-  border-radius: 8px;
-  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #0d1117;
+  border: 1px solid var(--line-metal);
+  color: var(--ink-light);
   padding: 0.75rem 1rem;
   font-size: 0.95rem;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
 }
 
 .search-wrap input:focus {
   outline: none;
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  border-color: var(--blue-action);
 }
 
-/* --- ÁREA CENTRAL (TRABAJOS Y TARJETAS) --- */
+/* --- ÁREA CENTRAL CON EL ENGRANAJE CENTRAL --- */
 .main-view {
   padding: 0 1.5rem 1.5rem;
   overflow: auto;
+  /* Fondo central con Engranaje y Estrella de referencia */
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><path d="M50,11l3.3,6.7,7.4,1.1-5.3,5.2,1.3,7.4-6.6-3.5-6.6,3.5,1.3-7.4-5.3-5.2,7.4-1.1,3.3-6.7Z" fill="%23f59e0b" opacity="0.6"/><path d="M50,0a50,50,0,1,0,50,50A50,50,0,0,0,50,0Zm0,96A46,46,0,1,1,96,50,46.052,46.052,0,0,1,50,96Z" fill="%232d384d" opacity="0.4"/><rect x="47" y="0" width="6" height="11" fill="%232d384d" opacity="0.4"/><rect x="47" y="89" width="6" height="11" fill="%232d384d" opacity="0.4"/><rect x="0" y="47" width="11" height="6" fill="%232d384d" opacity="0.4"/><rect x="89" y="47" width="11" height="6" fill="%232d384d" opacity="0.4"/><rect x="13.11" y="77.16" width="6.1" height="11.23" transform="translate(19.26 69.17) rotate(-45)" fill="%232d384d" opacity="0.4"/><rect x="80.79" y="11.61" width="6.1" height="11.23" transform="translate(4.3 80.83) rotate(-45)" fill="%232d384d" opacity="0.4"/><rect x="77.16" y="80.79" width="11.23" height="6.1" transform="translate(56.71 143.26) rotate(-135)" fill="%232d384d" opacity="0.4"/><rect x="11.61" y="13.11" width="11.23" height="6.1" transform="translate(-10.16 26.73) rotate(-135)" fill="%232d384d" opacity="0.4"/></svg>');
+  background-position: center 30%; /* Centrado en la parte superior */
+  background-size: 140px; /* Tamaño del engranaje */
+  background-repeat: no-repeat;
 }
 
 .section-title {
   font-size: 1.1rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--ink-light);
   margin-bottom: 0.8rem;
+  background: rgba(7,9,12,0.8); /* Fondo para que no se superponga al engranaje */
+  padding: 0.2rem 0;
+  display: inline-block;
 }
 
 .cards-grid {
@@ -304,24 +331,24 @@ h1, h2, h3 {
   gap: 0.75rem;
 }
 
+/* Tarjetas de Trabajos en Modo Oscuro */
 .job-card {
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  background: var(--card-dark);
+  border: 1px solid var(--line-metal);
+  border-radius: 8px;
   padding: 1rem;
   box-shadow: var(--shadow);
 }
 
 .job-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border-color: #cbd5e140;
 }
 
 .job-number {
   font-weight: 800;
-  color: var(--blue);
+  color: var(--ink-light);
   font-size: 0.9rem;
-  background: #eff6ff;
+  background: var(--blue-action);
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
 }
@@ -329,29 +356,30 @@ h1, h2, h3 {
 .job-vehicle {
   font-weight: 700;
   font-size: 1.1rem;
-  color: #1e293b;
+  color: var(--ink-light);
 }
 
 .job-meta {
   font-size: 0.88rem;
-  color: #475569;
+  color: var(--muted-light);
   margin: 0.5rem 0;
 }
 
-/* Selectores de estados integrados */
+/* Selectores de estados oscuros */
 .status-select {
   min-width: 160px;
   border-radius: 6px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--line-metal);
   padding: 0.4rem;
   font-size: 0.85rem;
-  background-color: #f8fafc;
+  background-color: #0d1117;
+  color: var(--ink-light);
 }
 
 /* Badges de Estado (Chips modernos) */
 .chip {
   color: #fff;
-  border-radius: 4px;
+  border-radius: 3px;
   padding: 0.25rem 0.6rem;
   font-size: 0.75rem;
   font-weight: 700;
@@ -359,19 +387,19 @@ h1, h2, h3 {
   letter-spacing: 0.02em;
 }
 
-.chip.ingresado { background: #3b82f6; }
-.chip.en-proceso { background: #f59e0b; }
-.chip.terminado { background: #10b981; }
-.chip.cancelado { background: #ef4444; }
-.chip.entregado { background: #64748b; }
-.chip.normal { background: #94a3b8; color: #1e293b; }
-.chip.urgente { background: #f59e0b; }
-.chip.muy-urgente { background: #ef4444; }
+.chip.ingresado { background: #1d4ed8; } /* Azul más oscuro */
+.chip.en-proceso { background: #9a6616; } /* Naranja ámbar más oscuro */
+.chip.terminado { background: #15803d; } /* Verde más oscuro */
+.chip.cancelado { background: #991b1b; } /* Rojo más oscuro */
+.chip.entregado { background: #334155; }
+.chip.normal { background: var(--line-metal); color: var(--muted-light); }
+.chip.urgente { background: var(--star-orange); color: #000; }
+.chip.muy-urgente { background: var(--red); }
 
 /* --- BOTONES GENERALES --- */
 .btn-primary, .btn-soft, .btn-danger, .btn-small {
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 0.55rem 1rem;
   font-weight: 700;
   font-size: 0.88rem;
@@ -379,39 +407,40 @@ h1, h2, h3 {
 }
 
 .btn-primary {
-  background: var(--blue);
+  background: var(--blue-action);
   color: #fff;
 }
 .btn-primary:hover { background: var(--blue-hover); }
 
 .btn-soft {
-  background: #f1f5f9;
-  color: #334155;
-  border: 1px solid #e2e8f0;
+  background: var(--line-metal);
+  color: var(--ink-light);
+  border: 1px solid rgba(255,255,255,0.05);
 }
-.btn-soft:hover { background: #e2e8f0; }
+.btn-soft:hover { background: #3b4356; }
 
 .btn-danger {
-  background: #fee2e2;
-  color: #dc2626;
+  background: #7f1d1d;
+  color: #fecaca;
+  border: 1px solid #ef444440;
 }
-.btn-danger:hover { background: #fecaca; }
+.btn-danger:hover { background: #991b1b; }
 
 /* --- NAVEGACIÓN INFERIOR (TABS) --- */
 .bottom-tabs {
-  border-top: 1px solid var(--line);
-  background: #ffffff;
+  border-top: 1px solid var(--line-metal);
+  background: var(--header-bg);
   display: grid;
   grid-template-columns: repeat(7, minmax(100px, 1fr));
   overflow: auto;
-  box-shadow: 0 -4px 10px rgba(0,0,0,0.02);
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.1);
 }
 
 .tab-btn {
   border: 0;
   border-bottom: 3px solid transparent;
-  background: #fff;
-  color: #64748b;
+  background: transparent;
+  color: var(--muted-light);
   padding: 1rem 0.5rem;
   font-weight: 700;
   font-size: 0.88rem;
@@ -420,42 +449,43 @@ h1, h2, h3 {
 }
 
 .tab-btn:hover {
-  color: #0f172a;
-  background: #f8fafc;
+  color: var(--ink-light);
+  background: rgba(255,255,255,0.02);
 }
 
 .tab-btn.active {
-  color: var(--blue);
-  background: #eff6ff;
-  border-bottom-color: var(--blue);
+  color: var(--blue-hover);
+  border-bottom-color: var(--blue-hover);
+  background: rgba(30, 96, 220, 0.05);
 }
 
-/* --- DIÁLOGOS Y MODALES --- */
+/* --- DIÁLOGOS Y MODALES MODO OSCURO --- */
 .form-dialog {
   width: min(500px, 94vw);
-  border: 0;
-  border-radius: 16px;
+  border: 1px solid var(--line-metal);
+  border-radius: 12px;
   box-shadow: var(--shadow-lg);
   padding: 0;
+  background: var(--card-dark);
+  color: var(--ink-light);
 }
 
 .form-dialog::backdrop {
-  background: rgba(15, 23, 42, 0.6);
-  backdrop-filter: blur(4px); /* Efecto esmerilado premium de fondo */
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(2px);
 }
 
 .form-grid {
   padding: 1.8rem;
   display: grid;
   gap: 1rem;
-  background: #fff;
 }
 
 .form-grid h3 {
   font-size: 1.2rem;
   font-weight: 800;
-  color: #0f172a;
-  border-bottom: 1px solid #e2e8f0;
+  color: var(--ink-light);
+  border-bottom: 1px solid var(--line-metal);
   padding-bottom: 0.5rem;
 }
 
@@ -464,37 +494,37 @@ h1, h2, h3 {
   gap: 0.4rem;
   font-size: 0.85rem;
   font-weight: 700;
-  color: #334155;
+  color: var(--muted-light);
 }
 
 .form-grid input, .form-grid select, .form-grid textarea {
   width: 100%;
-  border: 1px solid #cbd5e1;
+  background: #0d1117;
+  border: 1px solid var(--line-metal);
+  color: var(--ink-light);
   border-radius: 6px;
   padding: 0.6rem 0.75rem;
   font-size: 0.9rem;
-  background: #f8fafc;
 }
 
 .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus {
   outline: none;
-  border-color: var(--blue);
-  background: #fff;
+  border-color: var(--blue-action);
 }
 
 /* Catálogo de presupuestos */
 .quote-catalog {
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #f8fafc;
+  border: 1px solid var(--line-metal);
+  border-radius: 6px;
+  background: #0d1117;
   padding: 1rem;
 }
 
 .quote-service-row {
   grid-template-columns: auto minmax(0, 1fr) 100px auto;
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
+  background: var(--card-dark);
+  border: 1px solid var(--line-metal);
+  border-radius: 4px;
   padding: 0.5rem;
 }
 
