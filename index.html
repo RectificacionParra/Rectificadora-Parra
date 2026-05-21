@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rectificación Parra | Panel Taller</title>
+    <meta name="theme-color" content="#1f3f78" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&family=Nunito:wght@500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div id="loginScreen" class="screen-login">
+      <form id="loginForm" class="login-card">
+        <img src="./logo-parra.jpeg" alt="Logo Rectificacion Parra" class="login-logo" />
+        <h1>RECTIFICACIÓN PARRA</h1>
+        <p>Ingreso de empleados</p>
+        <label>
+          Usuario
+          <input id="loginUser" required placeholder="usuario" />
+        </label>
+        <label>
+          Contraseña
+          <input id="loginPassword" required type="password" placeholder="********" />
+        </label>
+        <small id="loginError" class="hidden" style="color: var(--red); font-weight: 700; margin-top: 0.2rem;"></small>
+        <button type="submit" class="btn-primary">Entrar</button>
+      </form>
+    </div>
+
+    <div id="appShell" class="app-shell hidden">
+      <header class="top-header">
+        <div class="brand-wrap">
+          <img src="./logo-parra.jpeg" alt="Logo Rectificacion Parra" class="brand-logo" />
+          <div>
+          <h2>RECTIFICACION PARRA</h2>
+          <p id="loggedAs">Empleado: -</p>
+          </div>
+        </div>
+        <div class="header-actions">
+          <span id="syncBadge" class="sync-badge offline">Local</span>
+          <button id="exportDataBtn" class="btn-soft">Exportar</button>
+          <label class="btn-soft file-btn">
+            Importar
+            <input id="importDataInput" type="file" accept=".json" />
+          </label>
+          <button id="logoutBtn" class="btn-danger">Salir</button>
+        </div>
+      </header>
+
+      <section class="dashboard-row">
+        <article class="dash-box">
+          <span>Motores en proceso</span>
+          <strong id="countMotorsInProcess">0</strong>
+        </article>
+        <article class="dash-box">
+          <span>Tapas en proceso</span>
+          <strong id="countHeadsInProcess">0</strong>
+        </article>
+        <article class="dash-box">
+          <span>Terminados hoy</span>
+          <strong id="countDoneToday">0</strong>
+        </article>
+      </section>
+
+      <section class="actions-grid">
+        <div class="action-group">
+          <h3>Ingresos</h3>
+          <div class="group-buttons">
+            <button id="btnNewMotor" class="btn-action green">Ingresar Motor</button>
+            <button id="btnNewHead" class="btn-action orange">Ingresar Tapa</button>
+            <button id="btnNewPart" class="btn-action red">Ingresar Repuesto</button>
+          </div>
+        </div>
+        <div class="action-group">
+          <h3>Comercial</h3>
+          <div class="group-buttons quote-buttons">
+            <button id="btnNewQuoteHead" class="btn-action blue">Presupuesto Tapa</button>
+            <button id="btnNewQuoteMotor" class="btn-action blue">Presupuesto Motor</button>
+            <button id="btnNewQuote" class="btn-action blue">Presupuesto Libre</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="searchWrap" class="search-wrap">
+        <input id="searchInput" placeholder="Buscar por cliente, vehiculo o numero..." />
+      </section>
+
+      <main id="mainView" class="main-view"></main>
+
+      <footer class="bottom-tabs">
+        <button class="tab-btn active" data-tab="trabajos">Trabajos</button>
+        <button class="tab-btn" data-tab="en proceso">En proceso</button>
+        <button class="tab-btn" data-tab="terminados">Terminados</button>
+        <button class="tab-btn" data-tab="entregados">Entregados</button>
+        <button class="tab-btn" data-tab="presupuestos">Presupuestos</button>
+        <button class="tab-btn" data-tab="clientes">Clientes</button>
+        <button class="tab-btn" data-tab="historial">Historial</button>
+      </footer>
+    </div>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <dialog id="jobDialog" class="form-dialog">
+      <form id="jobForm" class="form-grid">
+        <h3>Trabajo</h3>
+        <input id="jobId" type="hidden" />
+        <label>
+          Tipo
+          <select id="jobType" required>
+            <option value="motor">Motor</option>
+            <option value="tapa">Tapa</option>
+          </select>
+        </label>
+        <label>
+          Vehiculo / Modelo
+          <input id="jobVehicle" required />
+        </label>
+        <label>
+          Cliente
+          <select id="jobClient" required></select>
+        </label>
+        <label>
+          Prioridad
+          <select id="jobPriority" required>
+            <option value="Normal">Normal</option>
+            <option value="Urgente">Urgente</option>
+            <option value="Muy urgente">Muy urgente</option>
+          </select>
+        </label>
+        <label>
+          Asignado a
+          <select id="jobAssignedEmployee" required></select>
+        </label>
+        <label>
+          Estado
+          <select id="jobStatus" required></select>
+        </label>
+        <label>
+          Fecha ingreso
+          <input id="jobInDate" type="date" required />
+        </label>
+        <label>
+          Fecha prometida entrega
+          <input id="jobPromisedDate" type="date" required />
+        </label>
+        <label>
+          Observaciones de ingreso / vino con
+          <textarea
+            id="jobObservations"
+            rows="4"
+            placeholder="Ej: vino con multiple, turbo, bulones, tapa, sensor, polea, mangueras, etc."
+          ></textarea>
+        </label>
+        <label>
+          Fecha salida / entrega
+          <input id="jobOutDate" type="date" />
+        </label>
+        <div class="dialog-actions">
+          <button type="button" data-close="jobDialog" class="btn-soft">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="clientDialog" class="form-dialog">
+      <form id="clientForm" class="form-grid">
+        <h3>Cliente</h3>
+        <input id="clientId" type="hidden" />
+        <label>
+          Nombre
+          <input id="clientName" required />
+        </label>
+        <label>
+          Telefono
+          <input id="clientPhone" required />
+        </label>
+        <label>
+          Email
+          <input id="clientEmail" type="email" />
+        </label>
+        <label>
+          Direccion
+          <input id="clientAddress" />
+        </label>
+        <div class="dialog-actions">
+          <button type="button" data-close="clientDialog" class="btn-soft">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="employeeDialog" class="form-dialog">
+      <form id="employeeForm" class="form-grid">
+        <h3>Empleado / Login</h3>
+        <input id="employeeId" type="hidden" />
+        <label>
+          Nombre
+          <input id="employeeName" required />
+        </label>
+        <label>
+          Usuario
+          <input id="employeeUsername" required />
+        </label>
+        <label>
+          Contrasena
+          <input id="employeePassword" required />
+        </label>
+        <div class="dialog-actions">
+          <button type="button" data-close="employeeDialog" class="btn-soft">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="quoteDialog" class="form-dialog">
+      <form id="quoteForm" class="form-grid">
+        <h3>Presupuesto / Repuesto</h3>
+        <input id="quoteId" type="hidden" />
+        <label>
+          Cliente
+          <select id="quoteClient" required></select>
+        </label>
+        <label>
+          Tipo
+          <select id="quoteType" required>
+            <option value="presupuesto_tapa">Presupuesto Tapa</option>
+            <option value="presupuesto_motor">Presupuesto Motor</option>
+            <option value="presupuesto">Presupuesto Libre</option>
+            <option value="repuesto">Repuesto</option>
+          </select>
+        </label>
+        <label>
+          Descripcion
+          <input id="quoteDescription" required />
+        </label>
+        <section id="quoteCatalogSection" class="quote-catalog hidden">
+          <div class="quote-catalog-head">
+            <strong id="quoteCatalogTitle">Servicios</strong>
+            <button type="button" id="btnAddCatalogService" class="btn-soft">Agregar servicio</button>
+          </div>
+          <div id="quoteCatalogList" class="quote-catalog-list"></div>
+          <p class="quote-catalog-help">Marca los servicios que quieras agregar and modifica el texto si necesitas ajustarlo.</p>
+        </section>
+        <label>
+          Items / detalle final
+          <textarea id="quoteItems" rows="3"></textarea>
+        </label>
+        <label>
+          Total ($)
+          <input id="quoteTotal" type="number" min="0" step="0.01" required />
+        </label>
+        <label>
+          Fecha
+          <input id="quoteDate" type="date" required />
+        </label>
+        <div class="dialog-actions">
+          <button type="button" data-close="quoteDialog" class="btn-soft">Cancelar</button>
+          <button type="submit" class="btn-primary">Guardar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <template id="jobCardTemplate">
+      <article class="job-card">
+        <div class="job-main"></div>
+        <div class="job-meta"></div>
+        <div class="job-actions"></div>
+      </article>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="./supabase-config.js"></script>
+    <script src="./app.js"></script>
+
+    <!-- ANIMACIONES FUSIONADAS AL FINAL DEL BODY -->
+    <div class="side-animation left-side"></div>
+    <div class="side-animation right-side"></div>
+    <div class="ambient-glow"></div>
+  </body>
+</html>
