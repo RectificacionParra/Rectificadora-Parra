@@ -550,5 +550,123 @@ h1, h2, h3 {
 
   .group-buttons, .quote-buttons {
     grid-template-columns: 1fr;
+    /* --- ANIMACIONES EN LOS LATERALES (Efecto profundidad 3D y movimiento) --- */
+
+/* Brillo ambiental central detrás de la app */
+.ambient-glow {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 60vw;
+  height: 60vh;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(30, 96, 220, 0.12) 0%, rgba(0,0,0,0) 70%);
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Contenedores de las animaciones en los costados */
+.side-animation {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 25vw; /* Ocupa el espacio vacío de los lados */
+  max-width: 350px;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.6;
+  overflow: hidden;
+}
+
+.left-side {
+  left: 20px;
+  /* Fondo con patrón de líneas de medición técnica / cuadrícula */
+  background-image: 
+    linear-gradient(90deg, rgba(45, 56, 77, 0.15) 1px, transparent 1px),
+    linear-gradient(rgba(45, 56, 77, 0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.right-side {
+  right: 20px;
+  background-image: 
+    linear-gradient(90deg, rgba(45, 56, 77, 0.15) 1px, transparent 1px),
+    linear-gradient(rgba(45, 56, 77, 0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Efecto de rayo láser/pulso de energía 3D que recorre los bordes laterales */
+.side-animation::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: 0;
+  right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, 
+    transparent 0%, 
+    rgba(37, 99, 235, 0) 30%, 
+    rgba(37, 99, 235, 0.2) 70%, 
+    rgba(55, 119, 241, 0.8) 95%, 
+    #fff 100%
+  );
+  filter: blur(1px) drop-shadow(0 0 8px rgba(37, 99, 235, 0.8));
+  animation: scanEnergy 6s infinite linear;
+}
+
+/* La barra de la derecha corre a destiempo para dar más asimetría y naturalidad */
+.right-side::before {
+  animation-delay: 3s;
+  background: linear-gradient(180deg, 
+    transparent 0%, 
+    rgba(245, 158, 11, 0) 30%, 
+    rgba(245, 158, 11, 0.1) 70%, 
+    rgba(245, 158, 11, 0.6) 95%, 
+    #fff 100%
+  );
+  filter: blur(1px) drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
+}
+
+/* Elementos flotantes simulando partículas de metal en suspensión */
+.side-animation::after {
+  content: '▪  •  ▪  •';
+  font-size: 10px;
+  letter-spacing: 15px;
+  color: var(--line-metal);
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  animation: floatDust 12s infinite linear;
+  opacity: 0.3;
+}
+
+/* Ocultar en celulares para optimizar batería y pantalla completa */
+@media (max-width: 1250px) {
+  .side-animation, .ambient-glow {
+    display: none !important;
+  }
+}
+
+/* --- KEYFRAMES DE ANIMACIÓN --- */
+@keyframes scanEnergy {
+  0% {
+    top: -50%;
+  }
+  100% {
+    top: 110%;
+  }
+}
+
+@keyframes floatDust {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-20vh) rotate(360deg);
+    opacity: 0;
   }
 }
