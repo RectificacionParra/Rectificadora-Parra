@@ -261,23 +261,17 @@ function showToast(msg) {
   setTimeout(() => el.toast.classList.add("hidden"), 3000);
 }
 
-// NUEVA FUNCIÓN PARA ENVIAR WHATSAPP AUTOMÁTICO
 function sendWhatsAppNotification(job) {
   const client = getClient(job.clientId);
   if (!client || !client.phone) {
     showToast("El cliente no tiene un teléfono registrado.");
     return;
   }
-  
-  // Limpiar el número de teléfono para que tenga el formato correcto
   let cleanPhone = client.phone.replace(/\D+/g, "");
-  // Si no tiene código de país, le agregamos el de Argentina por defecto
   if (!cleanPhone.startsWith("54")) {
     cleanPhone = "54" + cleanPhone;
   }
-
   const message = `Hola ${client.name}, te avisamos de *Rectificación Parra* que el trabajo de tu vehículo *${job.vehicle}* (${job.type === "motor" ? "Motor" : "Tapa de Cilindros"}) ya se encuentra en estado: *${job.status.toUpperCase()}*. ¡Saludos!`;
-  
   const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
   window.open(url, "_blank");
 }
@@ -297,7 +291,8 @@ function renderActiveTab() {
   else if (activeTab === "entregados") list = data.jobs.filter((j) => j.status === "Entregado");
   else if (activeTab === "historial") list = data.jobs.filter((j) => j.status === "Entregado" || j.status === "Cancelado");
 
-  const query = getSearchText().toLowerCase();
+  // USAMOS LA VALIDACIÓN SEGURA DE TU CÓDIGO ANTERIOR
+  const query = el.searchInput ? el.searchInput.value.trim().toLowerCase() : "";
   if (query) {
     list = list.filter((j) => {
       const client = getClient(j.clientId);
@@ -321,7 +316,6 @@ function renderActiveTab() {
     const emp = getEmployee(job.assignedEmployee);
     const card = document.createElement("article");
     
-    // ASIGNAR CLASES DE COLORES AUTOMÁTICOS SEGÚN EL ESTADO
     let stateClass = "state-default";
     if (job.status === "Ingresado") stateClass = "state-ingresado";
     else if (job.status === "En proceso") stateClass = "state-proceso";
@@ -354,7 +348,6 @@ function renderActiveTab() {
       </div>
     `;
 
-    // Eventos de la tarjeta
     card.querySelector(".status-select").addEventListener("change", (e) => {
       updateJobStatus(job.id, e.target.value);
     });
@@ -881,5 +874,11 @@ function isLate(job) {
   if (job.status === "Terminado" || job.status === "Entregado" || job.status === "Cancelado") return false;
   return job.promisedDate < today();
 }
+
+function digits(value) { return String(value || "").replace(/\D+/g, ""); }
+function getSearchText() { return el.searchInput ? el.searchInput.value.trim() : ""; }
+function normalizeToken(value) { return String(value || "").toLowerCase().replaceAll(" ", "-"); }
+function addDays(dateIso, days) { const d = new Date(dateIso); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10); }
+function escapeHtml(raw) { return String(raw || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"); }
 
 window.addEventListener("DOMContentLoaded", init);
