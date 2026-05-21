@@ -653,3 +653,42 @@ body {
     top: 100%;
   }
 }
+/* ---- COLORES PARA LOS ESTADOS DE TRABAJO ---- */
+.state-ingresado {
+  border-left: 6px solid #3498db !important; /* Azul */
+  background: linear-gradient(to right, #f4f9fd, #ffffff) !important;
+}
+
+.state-proceso {
+  border-left: 6px solid #f39c12 !important; /* Naranja / Amarillo */
+  background: linear-gradient(to right, #fefbf3, #ffffff) !important;
+}
+
+.state-terminado {
+  border-left: 6px solid #2ecc71 !important; /* Verde */
+  background: linear-gradient(to right, #f4fbf6, #ffffff) !important;
+}
+
+.state-entregado {
+  border-left: 6px solid #95a5a6 !important; /* Gris */
+  background: #fdfdfd !important;
+  opacity: 0.85;
+}
+
+/* Botón especial para WhatsApp */
+.btn-success-action {
+  background-color: #25d366 !important;
+  color: white !important;
+  border: none !important;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.85rem;
+  margin-left: 5px;
+  transition: background 0.2s;
+}
+
+.btn-success-action:hover {
+  background-color: #1ebd56 !important;
+}
