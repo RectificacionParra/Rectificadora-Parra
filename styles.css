@@ -553,136 +553,83 @@ h1, h2, h3 {
 
   .group-buttons, .quote-buttons {
     grid-template-columns: 1fr;
-   /* --- ANIMACIONES EN LOS LATERALES CORREGIDAS (Fijadas a los extremos reales de la pantalla) --- */
+   /* --- ANIMACIONES EN LOS LATERALES (Look Flotante de Alta Gama) --- */
 
-/* Brillo ambiental central detrás de la app */
 .ambient-glow {
   position: fixed;
   top: 50%;
   left: 50%;
-  width: 70vw;
-  height: 70vh;
+  width: 80vw;
+  height: 80vh;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(30, 96, 220, 0.15) 0%, rgba(0,0,0,0) 70%);
-  z-index: 1; /* Pasa por delante del fondo base pero detrás de la app */
+  background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, rgba(0,0,0,0) 70%);
+  z-index: 1;
   pointer-events: none;
 }
 
-/* Contenedores de las animaciones en los costados */
 .side-animation {
   position: fixed;
   top: 0;
   bottom: 0;
-  width: 15vw; /* Ajustado para que ocupe el espacio justo de los lados */
-  min-width: 80px;
-  max-width: 280px;
-  z-index: 2; /* Forzamos a que flote sobre el fondo negro */
+  width: 8vw; /* Espacio ideal para pantallas grandes */
+  min-width: 60px;
+  z-index: 5; /* Subimos el nivel para que pase por encima del fondo base del body */
   pointer-events: none;
-  opacity: 0.75; /* Subimos la opacidad para que resalte más */
+  opacity: 0.9; 
   overflow: hidden;
 }
 
 .left-side {
-  left: 0 !important; /* Pegado al borde izquierdo de la pantalla */
-  border-right: 1px solid rgba(45, 56, 77, 0.3);
+  left: 0 !important;
   background-image: 
-    linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px),
-    linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px);
-  background-size: 25px 25px;
+    linear-gradient(90deg, rgba(37, 99, 235, 0.15) 1px, transparent 1px),
+    linear-gradient(rgba(37, 99, 235, 0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
 .right-side {
-  right: 0 !important; /* Pegado al borde derecho de la pantalla */
-  border-left: 1px solid rgba(45, 56, 77, 0.3);
+  right: 0 !important;
   background-image: 
-    linear-gradient(90deg, rgba(245, 158, 11, 0.08) 1px, transparent 1px),
-    linear-gradient(rgba(245, 158, 11, 0.08) 1px, transparent 1px);
-  background-size: 25px 25px;
+    linear-gradient(90deg, rgba(245, 158, 11, 0.15) 1px, transparent 1px),
+    linear-gradient(rgba(245, 158, 11, 0.15) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-/* El contenedor principal de tu app necesita estar por encima de los brillos */
-.app-shell, .screen-login {
-  position: relative;
-  z-index: 10 !important; /* Esto garantiza que el panel no sea tapado por los lásers */
-}
-
-/* Efecto de rayo láser/pulso de energía 3D que recorre los bordes laterales */
-.side-animation::before {
+/* Pulso de luz escáner izquierdo (Azul) */
+.left-side::before {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
-  height: 250px;
+  height: 180px;
   background: linear-gradient(180deg, 
     transparent 0%, 
-    rgba(37, 99, 235, 0.05) 40%, 
-    rgba(37, 99, 235, 0.4) 85%, 
+    rgba(37, 99, 235, 0.4) 70%, 
     #ffffff 100%
   );
-  filter: drop-shadow(0 0 12px rgba(37, 99, 235, 0.9));
-  animation: scanEnergy 5s infinite linear;
+  filter: drop-shadow(0 0 15px rgba(37, 99, 235, 1));
+  animation: scanEnergy 4s infinite linear;
 }
 
-/* Rayo derecho (Naranja / Ámbar industrial) */
+/* Pulso de luz escáner derecho (Naranja / Ámbar) */
 .right-side::before {
-  animation-delay: 2.5s; /* Desfasado para que no bajen en simultáneo */
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 180px;
   background: linear-gradient(180deg, 
     transparent 0%, 
-    rgba(245, 158, 11, 0.05) 40%, 
-    rgba(245, 158, 11, 0.4) 85%, 
+    rgba(245, 158, 11, 0.4) 70%, 
     #ffffff 100%
   );
-  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.9));
+  filter: drop-shadow(0 0 15px rgba(245, 158, 11, 1));
+  animation: scanEnergy 4s infinite linear;
+  animation-delay: 2s;
 }
 
-/* Partículas flotantes de metal */
-.side-animation::after {
-  content: '▪  •  ▪  •  ▪';
-  font-size: 11px;
-  letter-spacing: 20px;
-  color: var(--blue-hover);
-  position: absolute;
-  width: 100%;
-  text-align: center;
-  animation: floatDust 10s infinite linear;
-  opacity: 0.25;
-}
-
-.right-side::after {
-  color: var(--star-orange);
-  animation-duration: 14s;
-}
-
-/* Ocultar en pantallas donde el diseño ocupa todo el ancho (Celulares/Tablets) */
-@media (max-width: 1280px) {
+@media (max-width: 1300px) {
   .side-animation, .ambient-glow {
     display: none !important;
-  }
-}
-
-/* --- KEYFRAMES DE ANIMACIÓN --- */
-@keyframes scanEnergy {
-  0% {
-    top: -260px;
-  }
-  100% {
-    top: 100%;
-  }
-}
-
-@keyframes floatDust {
-  0% {
-    transform: translateY(105vh);
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.3;
-  }
-  80% {
-    opacity: 0.3;
-  }
-  100% {
-    transform: translateY(-10vh);
-    opacity: 0;
   }
 }
