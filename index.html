@@ -18,23 +18,23 @@
     <div class="side-animation right-side"></div>
     <div class="ambient-glow"></div>
 
-    <div id="loginScreen" class="screen-login">
-  <body>
-    <div id="loginScreen" class="screen-login">
+   <div id="loginScreen" class="screen-login">
       <form id="loginForm" class="login-card">
         <img src="./logo-parra.jpeg" alt="Logo Rectificacion Parra" class="login-logo" />
-        <h1>RECTIFICACION PARRA</h1>
+        <h1>RECTIFICACIÓN PARRA</h1>
         <p>Ingreso de empleados</p>
         <label>
           Usuario
           <input id="loginUser" required placeholder="usuario" />
         </label>
-       <label>
+        <label>
           Contraseña
           <input id="loginPassword" required type="password" placeholder="********" />
         </label>
+        
+        <small id="loginError" class="hidden" style="color: var(--red); font-weight: 700; margin-top: 0.2rem;"></small>
+        
         <button type="submit" class="btn-primary">Entrar</button>
-        <small id="loginError" class="error-msg"></small>
       </form>
     </div>
 
