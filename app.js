@@ -37,8 +37,10 @@ const DEFAULT_SERVICE_CATALOG = {
   repuesto: []
 };
 
-let data = { jobs: [], clients: [], employees: [], quotes: [] };
+let data = { jobs: [], clients: [], employees: [], quotes: [], history: [], counters: { motor: 0, tapa: 0, repuesto: 0, presupuesto: 0 } };
 let session = null;
+let lastLocalStatusMutationAt = 0;
+let toastTimer = null;
 const cloud = { client: null, enabled: false };
 
 const el = {
@@ -105,8 +107,7 @@ const el = {
   btnAddCatalogService: document.getElementById("btnAddCatalogService"),
   quoteItems: document.getElementById("quoteItems"),
   quoteTotal: document.getElementById("quoteTotal"),
-  quoteDate: document.getElementById("quoteDate"),
-  jobCardTemplate: document.getElementById("jobCardTemplate")
+  quoteDate: document.getElementById("quoteDate")
 };
 
 function init() {
@@ -125,12 +126,14 @@ function init() {
 function loadLocalData() {
   const local = localStorage.getItem(STORAGE_KEY);
   if (local) {
-    try { data = JSON.parse(local); } catch (e) { console.error(e); }
+    try {
+      const parsed = JSON.parse(local);
+      data.jobs = parsed.jobs || [];
+      data.clients = parsed.clients || [];
+      data.employees = parsed.employees || [];
+      data.quotes = parsed.quotes || [];
+    } catch (e) { console.error(e); }
   }
-  if (!data.jobs) data.jobs = [];
-  if (!data.clients) data.clients = [];
-  if (!data.employees) data.employees = [];
-  if (!data.quotes) data.quotes = [];
 }
 
 function saveLocalData() {
@@ -216,13 +219,13 @@ async function onLogin(e) {
   const pass = el.loginPassword.value;
   if (el.loginError) el.loginError.classList.add("hidden");
 
-  let found = data.employees.find((emp) => emp.username.toLowerCase() === user && emp.password === pass);
+  let found = data.employees.find((emp) => emp.username && emp.username.toLowerCase() === user && emp.password === pass);
 
   if (!found && cloud.enabled) {
     try {
-      const { data: res, error } = await cloud.client.from("empleados").select("*").eq("usuario", user).eq("contrasena", pass).maybeSingle();
+      const { data: res, error } = await cloud.client.from("employees").select("*").eq("username", user).eq("password", pass).maybeSingle();
       if (res) {
-        found = { id: res.id, name: res.nombre, username: res.usuario, password: res.contrasena };
+        found = { id: res.id, name: res.name, username: res.username, password: res.password };
         if (!data.employees.some(e => e.id === found.id)) {
           data.employees.push(found);
           saveLocalData();
@@ -258,7 +261,8 @@ function showToast(msg) {
   if (!el.toast) return;
   el.toast.textContent = msg;
   el.toast.classList.remove("hidden");
-  setTimeout(() => el.toast.classList.add("hidden"), 3000);
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.toast.classList.add("hidden"), 3000);
 }
 
 function sendWhatsAppNotification(job) {
@@ -291,8 +295,7 @@ function renderActiveTab() {
   else if (activeTab === "entregados") list = data.jobs.filter((j) => j.status === "Entregado");
   else if (activeTab === "historial") list = data.jobs.filter((j) => j.status === "Entregado" || j.status === "Cancelado");
 
-  // USAMOS LA VALIDACIÓN SEGURA DE TU CÓDIGO ANTERIOR
-  const query = el.searchInput ? el.searchInput.value.trim().toLowerCase() : "";
+  const query = getSearchText().toLowerCase();
   if (query) {
     list = list.filter((j) => {
       const client = getClient(j.clientId);
@@ -313,7 +316,7 @@ function renderActiveTab() {
 
   list.forEach((job) => {
     const client = getClient(job.clientId);
-    const emp = getEmployee(job.assignedEmployee);
+    const emp = getEmployee(job.assignedEmployeeId);
     const card = document.createElement("article");
     
     let stateClass = "state-default";
@@ -326,7 +329,7 @@ function renderActiveTab() {
 
     card.innerHTML = `
       <div class="job-main">
-        <span class="job-id">#${job.id}</span>
+        <span class="job-id">#${job.number || job.id}</span>
         <h4>${job.vehicle.toUpperCase()}</h4>
         <p class="job-type-badge">${job.type === "motor" ? "⚙️ MOTOR" : "🔩 TAPA"}</p>
         <p><strong>Cliente:</strong> ${client ? client.name : "No asignado"}</p>
@@ -366,8 +369,8 @@ function renderActiveTab() {
 
 function updateCounters() {
   if (!el.countMotorsInProcess) return;
-  const motors = data.jobs.filter((j) => j.type === "motor" && (j.status === "Ingresado" || j.status === "En process" || j.status === "En proceso")).length;
-  const heads = data.jobs.filter((j) => j.type === "tapa" && (j.status === "Ingresado" || j.status === "En process" || j.status === "En proceso")).length;
+  const motors = data.jobs.filter((j) => j.type === "motor" && (j.status === "Ingresado" || j.status === "En proceso")).length;
+  const heads = data.jobs.filter((j) => j.type === "tapa" && (j.status === "Ingresado" || j.status === "En proceso")).length;
   const doneToday = data.jobs.filter((j) => j.status === "Terminado").length;
 
   el.countMotorsInProcess.textContent = motors;
@@ -385,10 +388,14 @@ function updateJobStatus(id, newStatus) {
     saveLocalData();
     renderActiveTab();
     if (cloud.enabled) {
-      const payload = { id: job.id, tipo: job.type, vehiculo: job.vehicle, cliente_id: job.clientId, prioridad: job.priority, asignado_a: job.assignedEmployee, estado: job.status, fecha_ingreso: job.inDate, fecha_prometida: job.promisedDate, observaciones: job.observations, fecha_salida: job.outDate };
-      syncRowToCloud("trabajos", payload);
+      syncRowToCloud("jobs", {
+        id: job.id, number: job.number, type: job.type, vehicle: job.vehicle,
+        clientid: job.clientId, priority: job.priority, assignedemployeeid: job.assignedEmployeeId,
+        status: job.status, indate: job.inDate, promiseddate: job.promisedDate,
+        observations: job.observations, outdate: job.outDate
+      });
     }
-    showToast(`Trabajo #${id} actualizado a ${newStatus}`);
+    showToast(`Trabajo #${job.number || id} actualizado a ${newStatus}`);
   }
 }
 
@@ -400,7 +407,7 @@ function openJobDialog(job) {
     el.jobVehicle.value = job.vehicle;
     el.jobClient.value = job.clientId || "";
     el.jobPriority.value = job.priority || "Normal";
-    el.jobAssignedEmployee.value = job.assignedEmployee || "";
+    el.jobAssignedEmployee.value = job.assignedEmployeeId || "";
     el.jobStatus.value = job.status;
     el.jobInDate.value = job.inDate;
     el.jobPromisedDate.value = job.promisedDate || "";
@@ -440,13 +447,17 @@ function onSaveJob(e) {
   const id = el.jobId.value ? Number(el.jobId.value) : Date.now();
   const isNew = !el.jobId.value;
 
+  const existingJob = data.jobs.find(j => j.id === id);
+  const nextNum = existingJob ? existingJob.number : String(Date.now()).slice(-6);
+
   const job = {
     id,
+    number: nextNum,
     type: el.jobType.value,
     vehicle: el.jobVehicle.value.trim(),
     clientId: el.jobClient.value ? Number(el.jobClient.value) : null,
     priority: el.jobPriority.value,
-    assignedEmployee: el.jobAssignedEmployee.value ? Number(el.jobAssignedEmployee.value) : null,
+    assignedEmployeeId: el.jobAssignedEmployee.value ? Number(el.jobAssignedEmployee.value) : null,
     status: el.jobStatus.value,
     inDate: el.jobInDate.value,
     promisedDate: el.jobPromisedDate.value || null,
@@ -465,8 +476,12 @@ function onSaveJob(e) {
   renderActiveTab();
 
   if (cloud.enabled) {
-    const payload = { id: job.id, tipo: job.type, vehiculo: job.vehicle, cliente_id: job.clientId, prioridad: job.priority, asignado_a: job.assignedEmployee, estado: job.status, fecha_ingreso: job.inDate, fecha_prometida: job.promisedDate, observaciones: job.observations, fecha_salida: job.outDate };
-    syncRowToCloud("trabajos", payload);
+    syncRowToCloud("jobs", {
+      id: job.id, number: job.number, type: job.type, vehicle: job.vehicle,
+      clientid: job.clientId, priority: job.priority, assignedemployeeid: job.assignedEmployeeId,
+      status: job.status, indate: job.inDate, promiseddate: job.promisedDate,
+      observations: job.observations, outdate: job.outDate
+    });
   }
   showToast(isNew ? "Trabajo ingresado correctamente" : "Trabajo actualizado");
 }
@@ -561,8 +576,7 @@ function onSaveClient(e) {
   renderClientsView();
 
   if (cloud.enabled) {
-    const payload = { id: client.id, nombre: client.name, telefono: client.phone, email: client.email, direccion: client.address };
-    syncRowToCloud("clientes", payload);
+    syncRowToCloud("clients", { id: client.id, name: client.name, phone: client.phone, email: client.email, address: client.address });
   }
   showToast(isNew ? "Cliente registrado" : "Cliente actualizado");
 }
@@ -583,7 +597,7 @@ function renderQuotesView() {
     card.className = "job-card quote-card-item";
     card.innerHTML = `
       <div class="job-main">
-        <span class="job-id">#${q.id}</span>
+        <span class="job-id">#${q.number || q.id}</span>
         <h4>${q.description.toUpperCase()}</h4>
         <p class="job-type-badge quote-label">${String(q.type).replace("_", " ").toUpperCase()}</p>
         <p><strong>Cliente:</strong> ${client ? client.name : "Desconocido"}</p>
@@ -700,8 +714,12 @@ function onSaveQuote(e) {
   const id = el.quoteId.value ? Number(el.quoteId.value) : Date.now();
   const isNew = !el.quoteId.value;
 
+  const existingQuote = data.quotes.find(q => q.id === id);
+  const nextNum = existingQuote ? existingQuote.number : String(Date.now()).slice(-6);
+
   const quote = {
     id,
+    number: nextNum,
     clientId: el.quoteClient.value ? Number(el.quoteClient.value) : null,
     type: el.quoteType.value,
     description: el.quoteDescription.value.trim(),
@@ -721,8 +739,7 @@ function onSaveQuote(e) {
   renderQuotesView();
 
   if (cloud.enabled) {
-    const payload = { id: quote.id, cliente_id: quote.clientId, tipo: quote.type, descripcion: quote.description, items: quote.items, total: quote.total, fecha: quote.date };
-    syncRowToCloud("presupuestos", payload);
+    syncRowToCloud("quotes", { id: quote.id, number: quote.number, clientid: quote.clientId, type: quote.type, description: quote.description, items: quote.items, total: quote.total, date: quote.date });
   }
   showToast(isNew ? "Comprobante guardado" : "Comprobante actualizado");
 }
@@ -745,7 +762,7 @@ function generatePDF(q) {
   doc.setFont("Helvetica", "normal");
   doc.text("Motores y Tapas de Cilindros", 15, 32);
 
-  doc.text(`COMPROBANTE #${q.id}`, 150, 20);
+  doc.text(`COMPROBANTE #${q.number || q.id}`, 150, 20);
   doc.text(`Fecha: ${q.date}`, 150, 28);
 
   doc.setTextColor(40, 40, 40);
@@ -794,7 +811,7 @@ function generatePDF(q) {
   doc.setTextColor(31, 63, 120);
   doc.text(money(q.total), 195, y, { align: "right" });
 
-  doc.save(`Comprobante_Parra_${q.id}.pdf`);
+  doc.save(`Comprobante_Parra_${q.number || q.id}.pdf`);
 }
 
 function exportData() {
@@ -810,7 +827,7 @@ function importData(e) {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = (evt) => {
+  reader.onload = async (evt) => {
     try {
       const parsed = JSON.parse(evt.target.result);
       if (parsed.jobs && parsed.clients) {
@@ -828,32 +845,48 @@ async function syncRowToCloud(table, payload) {
   if (!cloud.enabled) return;
   try {
     const { error } = await cloud.client.from(table).upsert(payload);
-    if (error) console.error(`Error sincronizando fila en ${table}:`, error);
+    if (error) console.error(`Error de sincronización en ${table}:`, error);
   } catch (err) { console.error(err); }
 }
 
 async function pullCloudData() {
   if (!cloud.enabled) return;
   try {
-    const { data: cList } = await cloud.client.from("clientes").select("*");
-    if (cList) {
-      data.clients = cList.map(c => ({ id: c.id, name: c.nombre, phone: c.telefono, email: c.email, address: c.direccion }));
+    const [employeesRes, clientsRes, jobsRes, quotesRes] = await Promise.all([
+      cloud.client.from("employees").select("*"),
+      cloud.client.from("clients").select("*"),
+      cloud.client.from("jobs").select("*"),
+      cloud.client.from("quotes").select("*")
+    ]);
+
+    if (employeesRes.data) {
+      data.employees = employeesRes.data.map(e => ({ id: e.id, name: e.name, username: e.username, password: e.password }));
     }
-    const { data: eList } = await cloud.client.from("empleados").select("*");
-    if (eList) {
-      data.employees = eList.map(e => ({ id: e.id, name: e.nombre, username: e.usuario, password: e.contrasena }));
+    if (clientsRes.data) {
+      data.clients = clientsRes.data.map(c => ({ id: c.id, name: c.name, phone: c.phone, email: c.email, address: c.address }));
     }
-    const { data: jList } = await cloud.client.from("trabajos").select("*");
-    if (jList) {
-      data.jobs = jList.map(j => ({ id: j.id, type: j.tipo, vehicle: j.vehiculo, clientId: j.cliente_id, priority: j.prioridad, assignedEmployee: j.asignado_a, status: j.estado, inDate: j.fecha_ingreso, promisedDate: j.fecha_prometida, observations: j.observaciones, outDate: j.fecha_salida }));
+    if (jobsRes.data) {
+      data.jobs = jobsRes.data.map(j => ({
+        id: j.id, number: j.number, type: j.type, vehicle: j.vehicle,
+        clientId: j.clientid || j.clientId, priority: j.priority,
+        assignedEmployeeId: j.assignedemployeeid || j.assignedEmployeeId,
+        status: j.status, inDate: j.indate || j.inDate, promisedDate: j.promiseddate || j.promisedDate,
+        observations: j.observations, outDate: j.outdate || j.outDate
+      }));
     }
-    const { data: qList } = await cloud.client.from("presupuestos").select("*");
-    if (qList) {
-      data.quotes = qList.map(q => ({ id: q.id, clientId: q.cliente_id, type: q.tipo, description: q.descripcion, items: q.items, total: Number(q.total || 0), date: q.fecha }));
+    if (quotesRes.data) {
+      data.quotes = quotesRes.data.map(q => ({
+        id: q.id, number: q.number, clientId: q.clientid || q.clientId,
+        type: q.type, description: q.description, items: q.items, total: Number(q.total || 0), date: q.date || q.fecha
+      }));
     }
     saveLocalData();
     updateCounters();
-  } catch (err) { console.error("Error trayendo datos de la nube:", err); }
+    setSyncBadge(true, "Nube");
+  } catch (err) { 
+    console.error("Error trayendo datos de la nube:", err); 
+    setSyncBadge(false, "Local");
+  }
 }
 
 function getClient(id) { return data.clients.find((c) => c.id === id); }
