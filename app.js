@@ -570,17 +570,21 @@ function restoreSession() {
 
 async function onLogin(event) {
   event.preventDefault();
+  const cachedEmployees = Array.isArray(data.employees) ? [...data.employees] : [];
   if (cloud.enabled) {
     try {
       await pullCloudEmployeesOnly();
     } catch {
-      el.loginError.textContent = "No se pudo conectar con la nube. Revisa internet/Supabase.";
-      return;
+      data.employees = cachedEmployees;
     }
   }
   const username = el.loginUser.value.trim().toLowerCase();
   const password = el.loginPassword.value.trim();
-  const user = data.employees.find((e) => e.username.toLowerCase() === username && e.password === password);
+  const fallbackEmployees = cachedEmployees.length ? cachedEmployees : defaultData().employees;
+  const employeesPool = data.employees.length ? data.employees : fallbackEmployees;
+  const user = employeesPool.find(
+    (e) => String(e.username || "").toLowerCase() === username && String(e.password || "") === password
+  );
   if (!user) {
     el.loginError.textContent = "Usuario o contrasena incorrectos.";
     return;
