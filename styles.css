@@ -45,15 +45,17 @@ h1, h2, h3 {
   display: none !important;
 }
 
-/* --- LOGIN PURE-DARK --- */
+/* --- LOGIN REFINADO CON TRANSPARENCIA (Deja ver el fondo) --- */
 .screen-login {
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 1rem;
   width: 100%;
+  position: relative;
+  z-index: 10 !important;
+  background: transparent !important; /* Quitamos el fondo negro total para que se vean los laterales */
 }
-
 .login-card {
   width: min(400px, 92vw);
   background: var(--card-dark);
@@ -106,19 +108,20 @@ h1, h2, h3 {
   box-shadow: 0 0 0 3px rgba(30, 96, 220, 0.2);
 }
 
-/* --- ESTRUCTURA GENERAL DE LA APP --- */
+/* --- ESTRUCTURA GENERAL DE LA APP ACORTADA --- */
 .app-shell {
-  width: min(1200px, 98vw);
+  width: min(1200px, 90vw); /* Reducimos a 90vw para obligar a que queden márgenes libres a los lados */
   margin: 1.5rem auto;
-  background: var(--bg-dark);
+  background: #0f172a; /* Fondo oscuro interno del panel */
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
   overflow: hidden;
   display: grid;
   grid-template-rows: auto auto auto auto 1fr auto;
   border: 1px solid var(--line-metal);
+  position: relative;
+  z-index: 10 !important;
 }
-
 /* Header Ejecutivo e Industrial */
 .top-header {
   background: var(--header-bg);
