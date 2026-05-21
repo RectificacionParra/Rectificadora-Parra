@@ -550,18 +550,18 @@ h1, h2, h3 {
 
   .group-buttons, .quote-buttons {
     grid-template-columns: 1fr;
-    /* --- ANIMACIONES EN LOS LATERALES (Efecto profundidad 3D y movimiento) --- */
+   /* --- ANIMACIONES EN LOS LATERALES CORREGIDAS (Fijadas a los extremos reales de la pantalla) --- */
 
 /* Brillo ambiental central detrás de la app */
 .ambient-glow {
   position: fixed;
   top: 50%;
   left: 50%;
-  width: 60vw;
-  height: 60vh;
+  width: 70vw;
+  height: 70vh;
   transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(30, 96, 220, 0.12) 0%, rgba(0,0,0,0) 70%);
-  z-index: -1;
+  background: radial-gradient(circle, rgba(30, 96, 220, 0.15) 0%, rgba(0,0,0,0) 70%);
+  z-index: 1; /* Pasa por delante del fondo base pero detrás de la app */
   pointer-events: none;
 }
 
@@ -570,78 +570,88 @@ h1, h2, h3 {
   position: fixed;
   top: 0;
   bottom: 0;
-  width: 25vw; /* Ocupa el espacio vacío de los lados */
-  max-width: 350px;
-  z-index: -1;
+  width: 15vw; /* Ajustado para que ocupe el espacio justo de los lados */
+  min-width: 80px;
+  max-width: 280px;
+  z-index: 2; /* Forzamos a que flote sobre el fondo negro */
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.75; /* Subimos la opacidad para que resalte más */
   overflow: hidden;
 }
 
 .left-side {
-  left: 20px;
-  /* Fondo con patrón de líneas de medición técnica / cuadrícula */
+  left: 0 !important; /* Pegado al borde izquierdo de la pantalla */
+  border-right: 1px solid rgba(45, 56, 77, 0.3);
   background-image: 
-    linear-gradient(90deg, rgba(45, 56, 77, 0.15) 1px, transparent 1px),
-    linear-gradient(rgba(45, 56, 77, 0.15) 1px, transparent 1px);
-  background-size: 20px 20px;
+    linear-gradient(90deg, rgba(37, 99, 235, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(37, 99, 235, 0.08) 1px, transparent 1px);
+  background-size: 25px 25px;
 }
 
 .right-side {
-  right: 20px;
+  right: 0 !important; /* Pegado al borde derecho de la pantalla */
+  border-left: 1px solid rgba(45, 56, 77, 0.3);
   background-image: 
-    linear-gradient(90deg, rgba(45, 56, 77, 0.15) 1px, transparent 1px),
-    linear-gradient(rgba(45, 56, 77, 0.15) 1px, transparent 1px);
-  background-size: 20px 20px;
+    linear-gradient(90deg, rgba(245, 158, 11, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(245, 158, 11, 0.08) 1px, transparent 1px);
+  background-size: 25px 25px;
+}
+
+/* El contenedor principal de tu app necesita estar por encima de los brillos */
+.app-shell, .screen-login {
+  position: relative;
+  z-index: 10 !important; /* Esto garantiza que el panel no sea tapado por los lásers */
 }
 
 /* Efecto de rayo láser/pulso de energía 3D que recorre los bordes laterales */
 .side-animation::before {
   content: '';
   position: absolute;
-  top: -50%;
   left: 0;
   right: 0;
-  height: 40%;
+  height: 250px;
   background: linear-gradient(180deg, 
     transparent 0%, 
-    rgba(37, 99, 235, 0) 30%, 
-    rgba(37, 99, 235, 0.2) 70%, 
-    rgba(55, 119, 241, 0.8) 95%, 
-    #fff 100%
+    rgba(37, 99, 235, 0.05) 40%, 
+    rgba(37, 99, 235, 0.4) 85%, 
+    #ffffff 100%
   );
-  filter: blur(1px) drop-shadow(0 0 8px rgba(37, 99, 235, 0.8));
-  animation: scanEnergy 6s infinite linear;
+  filter: drop-shadow(0 0 12px rgba(37, 99, 235, 0.9));
+  animation: scanEnergy 5s infinite linear;
 }
 
-/* La barra de la derecha corre a destiempo para dar más asimetría y naturalidad */
+/* Rayo derecho (Naranja / Ámbar industrial) */
 .right-side::before {
-  animation-delay: 3s;
+  animation-delay: 2.5s; /* Desfasado para que no bajen en simultáneo */
   background: linear-gradient(180deg, 
     transparent 0%, 
-    rgba(245, 158, 11, 0) 30%, 
-    rgba(245, 158, 11, 0.1) 70%, 
-    rgba(245, 158, 11, 0.6) 95%, 
-    #fff 100%
+    rgba(245, 158, 11, 0.05) 40%, 
+    rgba(245, 158, 11, 0.4) 85%, 
+    #ffffff 100%
   );
-  filter: blur(1px) drop-shadow(0 0 8px rgba(245, 158, 11, 0.6));
+  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.9));
 }
 
-/* Elementos flotantes simulando partículas de metal en suspensión */
+/* Partículas flotantes de metal */
 .side-animation::after {
-  content: '▪  •  ▪  •';
-  font-size: 10px;
-  letter-spacing: 15px;
-  color: var(--line-metal);
+  content: '▪  •  ▪  •  ▪';
+  font-size: 11px;
+  letter-spacing: 20px;
+  color: var(--blue-hover);
   position: absolute;
   width: 100%;
   text-align: center;
-  animation: floatDust 12s infinite linear;
-  opacity: 0.3;
+  animation: floatDust 10s infinite linear;
+  opacity: 0.25;
 }
 
-/* Ocultar en celulares para optimizar batería y pantalla completa */
-@media (max-width: 1250px) {
+.right-side::after {
+  color: var(--star-orange);
+  animation-duration: 14s;
+}
+
+/* Ocultar en pantallas donde el diseño ocupa todo el ancho (Celulares/Tablets) */
+@media (max-width: 1280px) {
   .side-animation, .ambient-glow {
     display: none !important;
   }
@@ -650,23 +660,26 @@ h1, h2, h3 {
 /* --- KEYFRAMES DE ANIMACIÓN --- */
 @keyframes scanEnergy {
   0% {
-    top: -50%;
+    top: -260px;
   }
   100% {
-    top: 110%;
+    top: 100%;
   }
 }
 
 @keyframes floatDust {
   0% {
-    transform: translateY(100vh) rotate(0deg);
+    transform: translateY(105vh);
     opacity: 0;
   }
-  50% {
-    opacity: 0.4;
+  20% {
+    opacity: 0.3;
+  }
+  80% {
+    opacity: 0.3;
   }
   100% {
-    transform: translateY(-20vh) rotate(360deg);
+    transform: translateY(-10vh);
     opacity: 0;
   }
 }
