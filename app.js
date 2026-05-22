@@ -6,7 +6,7 @@ const CLOUD_REFRESH_MS = 20000;
 
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () => crypto.randomUUID();
-// Se redujo el tamaño del ID generado para que Supabase no lo rechace por desbordamiento de enteros (Integer Overflow)
+// ID corto para evitar problemas con Supabase
 const generateId = () => Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000); 
 
 const money = (value) =>
@@ -48,7 +48,7 @@ const cloud = { client: null, enabled: false };
 let toastTimer = null;
 let lastLocalStatusMutationAt = 0;
 
-// --- INICIALIZACIÓN SEGURA ---
+// --- INICIALIZACIÓN SUPER SEGURA ---
 window.addEventListener("DOMContentLoaded", () => {
   el = {
     loginScreen: document.getElementById("loginScreen"),
@@ -124,40 +124,44 @@ window.addEventListener("DOMContentLoaded", () => {
   restoreSession();
 });
 
+// Agregados 'if' para evitar el error de "Cannot read properties of null"
 function bindEvents() {
-  el.loginForm?.addEventListener("submit", onLogin);
-  el.logoutBtn?.addEventListener("click", onLogout);
-  el.searchInput?.addEventListener("input", renderActiveTab);
-  el.exportDataBtn?.addEventListener("click", exportData);
-  el.importDataInput?.addEventListener("change", importData);
+  if (el.loginForm) el.loginForm.addEventListener("submit", onLogin);
+  if (el.logoutBtn) el.logoutBtn.addEventListener("click", onLogout);
+  if (el.searchInput) el.searchInput.addEventListener("input", renderActiveTab);
+  if (el.exportDataBtn) el.exportDataBtn.addEventListener("click", exportData);
+  if (el.importDataInput) el.importDataInput.addEventListener("change", importData);
 
-  el.btnNewMotor?.addEventListener("click", () => openJobDialog({ type: "motor" }));
-  el.btnNewHead?.addEventListener("click", () => openJobDialog({ type: "tapa" }));
-  el.btnNewPart?.addEventListener("click", () => openQuoteDialog({ type: "repuesto" }));
-  el.btnNewQuoteHead?.addEventListener("click", () => openQuoteDialog({ type: "presupuesto_tapa" }));
-  el.btnNewQuoteMotor?.addEventListener("click", () => openQuoteDialog({ type: "presupuesto_motor" }));
-  el.btnNewQuote?.addEventListener("click", () => openQuoteDialog({ type: "presupuesto" }));
+  if (el.btnNewMotor) el.btnNewMotor.addEventListener("click", () => openJobDialog({ type: "motor" }));
+  if (el.btnNewHead) el.btnNewHead.addEventListener("click", () => openJobDialog({ type: "tapa" }));
+  if (el.btnNewPart) el.btnNewPart.addEventListener("click", () => openQuoteDialog({ type: "repuesto" }));
+  if (el.btnNewQuoteHead) el.btnNewQuoteHead.addEventListener("click", () => openQuoteDialog({ type: "presupuesto_tapa" }));
+  if (el.btnNewQuoteMotor) el.btnNewQuoteMotor.addEventListener("click", () => openQuoteDialog({ type: "presupuesto_motor" }));
+  if (el.btnNewQuote) el.btnNewQuote.addEventListener("click", () => openQuoteDialog({ type: "presupuesto" }));
 
-  el.jobForm?.addEventListener("submit", onSaveJob);
-  el.clientForm?.addEventListener("submit", onSaveClient);
-  el.employeeForm?.addEventListener("submit", onSaveEmployee);
-  el.quoteForm?.addEventListener("submit", onSaveQuote);
+  if (el.jobForm) el.jobForm.addEventListener("submit", onSaveJob);
+  if (el.clientForm) el.clientForm.addEventListener("submit", onSaveClient);
+  if (el.employeeForm) el.employeeForm.addEventListener("submit", onSaveEmployee);
+  if (el.quoteForm) el.quoteForm.addEventListener("submit", onSaveQuote);
 
-  el.quoteType?.addEventListener("change", onQuoteTypeChange);
-  el.btnAddCatalogService?.addEventListener("click", onAddCatalogService);
+  if (el.quoteType) el.quoteType.addEventListener("change", onQuoteTypeChange);
+  if (el.btnAddCatalogService) el.btnAddCatalogService.addEventListener("click", onAddCatalogService);
 
-  el.tabButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      el.tabButtons.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      renderActiveTab();
+  if (el.tabButtons && el.tabButtons.length > 0) {
+    el.tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        el.tabButtons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        renderActiveTab();
+      });
     });
-  });
+  }
 
   document.querySelectorAll("button[data-close]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const dialogId = btn.getAttribute("data-close");
-      document.getElementById(dialogId)?.close();
+      const dialog = document.getElementById(dialogId);
+      if (dialog) dialog.close();
     });
   });
 }
@@ -267,8 +271,8 @@ function onLogout() {
 }
 
 function enterApp() {
-  el.loginScreen?.classList.add("hidden");
-  el.appShell?.classList.remove("hidden");
+  if (el.loginScreen) el.loginScreen.classList.add("hidden");
+  if (el.appShell) el.appShell.classList.remove("hidden");
   if (el.loggedAs) el.loggedAs.textContent = `Operario: ${currentUser.name}`;
   hydrateSelects();
   renderActiveTab();
@@ -279,8 +283,8 @@ function enterApp() {
 }
 
 function exitApp() {
-  el.appShell?.classList.add("hidden");
-  el.loginScreen?.classList.remove("hidden");
+  if (el.appShell) el.appShell.classList.add("hidden");
+  if (el.loginScreen) el.loginScreen.classList.remove("hidden");
   if (el.loginUser) el.loginUser.value = "";
   if (el.loginPassword) el.loginPassword.value = "";
 }
@@ -391,9 +395,9 @@ function seedDemoData() {
 }
 
 function hydrateSelects() {
-  populateSelect(el.jobClient, data.clients, (x) => `${x.name}`);
-  populateSelect(el.quoteClient, data.clients, (x) => `${x.name}`);
-  populateSelect(el.jobAssignedEmployee, data.employees.filter((x) => x.role !== "admin"), (x) => x.name);
+  if (el.jobClient) populateSelect(el.jobClient, data.clients, (x) => `${x.name}`);
+  if (el.quoteClient) populateSelect(el.quoteClient, data.clients, (x) => `${x.name}`);
+  if (el.jobAssignedEmployee) populateSelect(el.jobAssignedEmployee, data.employees.filter((x) => x.role !== "admin"), (x) => x.name);
   if (el.jobStatus) {
     el.jobStatus.innerHTML = STATES.map((s) => `<option value="${s}">${s}</option>`).join("");
   }
@@ -504,31 +508,31 @@ function updateJobStatus(id, newStatus) {
 function openJobDialog(job) {
   hydrateSelects();
   if (job && job.id) {
-    el.jobId.value = job.id;
-    el.jobType.value = job.type;
-    el.jobVehicle.value = job.vehicle;
-    el.jobClient.value = job.clientId;
-    el.jobPriority.value = job.priority;
-    el.jobAssignedEmployee.value = job.assignedEmployeeId;
-    el.jobStatus.value = job.status;
-    el.jobInDate.value = job.inDate;
-    el.jobPromisedDate.value = job.promisedDate || "";
-    el.jobObservations.value = job.observations;
-    el.jobOutDate.value = job.outDate || "";
+    if (el.jobId) el.jobId.value = job.id;
+    if (el.jobType) el.jobType.value = job.type;
+    if (el.jobVehicle) el.jobVehicle.value = job.vehicle;
+    if (el.jobClient) el.jobClient.value = job.clientId;
+    if (el.jobPriority) el.jobPriority.value = job.priority;
+    if (el.jobAssignedEmployee) el.jobAssignedEmployee.value = job.assignedEmployeeId;
+    if (el.jobStatus) el.jobStatus.value = job.status;
+    if (el.jobInDate) el.jobInDate.value = job.inDate;
+    if (el.jobPromisedDate) el.jobPromisedDate.value = job.promisedDate || "";
+    if (el.jobObservations) el.jobObservations.value = job.observations;
+    if (el.jobOutDate) el.jobOutDate.value = job.outDate || "";
   } else {
-    el.jobId.value = "";
-    el.jobType.value = job?.type || "motor";
-    el.jobVehicle.value = "";
-    el.jobClient.value = "";
-    el.jobPriority.value = "Normal";
-    el.jobAssignedEmployee.value = "";
-    el.jobStatus.value = "Ingresado";
-    el.jobInDate.value = today();
-    el.jobPromisedDate.value = "";
-    el.jobObservations.value = "";
-    el.jobOutDate.value = "";
+    if (el.jobId) el.jobId.value = "";
+    if (el.jobType) el.jobType.value = job?.type || "motor";
+    if (el.jobVehicle) el.jobVehicle.value = "";
+    if (el.jobClient) el.jobClient.value = "";
+    if (el.jobPriority) el.jobPriority.value = "Normal";
+    if (el.jobAssignedEmployee) el.jobAssignedEmployee.value = "";
+    if (el.jobStatus) el.jobStatus.value = "Ingresado";
+    if (el.jobInDate) el.jobInDate.value = today();
+    if (el.jobPromisedDate) el.jobPromisedDate.value = "";
+    if (el.jobObservations) el.jobObservations.value = "";
+    if (el.jobOutDate) el.jobOutDate.value = "";
   }
-  el.jobDialog?.showModal();
+  if (el.jobDialog) el.jobDialog.showModal();
 }
 
 function onSaveJob(e) {
@@ -557,7 +561,7 @@ function onSaveJob(e) {
   job.outDate = el.jobOutDate.value;
 
   syncMutation("jobs", job);
-  el.jobDialog?.close();
+  if (el.jobDialog) el.jobDialog.close();
   renderActiveTab();
   showToast("Orden procesada y guardada.");
 }
@@ -592,17 +596,17 @@ function renderClientsView() {
 
 function openClientDialog(c) {
   if (c) {
-    el.clientId.value = c.id;
-    el.clientName.value = c.name;
-    el.clientPhone.value = c.phone;
-    el.clientAddress.value = c.address || "";
+    if (el.clientId) el.clientId.value = c.id;
+    if (el.clientName) el.clientName.value = c.name;
+    if (el.clientPhone) el.clientPhone.value = c.phone;
+    if (el.clientAddress) el.clientAddress.value = c.address || "";
   } else {
-    el.clientId.value = "";
-    el.clientName.value = "";
-    el.clientPhone.value = "";
-    el.clientAddress.value = "";
+    if (el.clientId) el.clientId.value = "";
+    if (el.clientName) el.clientName.value = "";
+    if (el.clientPhone) el.clientPhone.value = "";
+    if (el.clientAddress) el.clientAddress.value = "";
   }
-  el.clientDialog?.showModal();
+  if (el.clientDialog) el.clientDialog.showModal();
 }
 
 function onSaveClient(e) {
@@ -616,7 +620,7 @@ function onSaveClient(e) {
   c.address = el.clientAddress.value.trim();
 
   syncMutation("clients", c);
-  el.clientDialog?.close();
+  if (el.clientDialog) el.clientDialog.close();
   renderClientsView();
   showToast("Cliente guardado.");
 }
@@ -635,7 +639,6 @@ function renderQuotesView() {
     const card = document.createElement("article");
     card.className = "job-card quote-card-item";
     
-    // Aquí se agregan los botones de PDF, WhatsApp y Editar
     card.innerHTML = `
       <div class="job-main">
         <span class="job-id">#${q.number}</span>
@@ -659,65 +662,57 @@ function renderQuotesView() {
   el.mainView.appendChild(grid);
 }
 
-// Nueva función que abre WhatsApp y descarga el PDF al mismo tiempo
 function sendWhatsAppQuote(q) {
   const client = getClient(q.clientId);
   if (!client || !client.phone) {
     alert("Para enviar por WhatsApp, el cliente debe tener un teléfono cargado.");
     return;
   }
-  
-  // Limpia el número de teléfono para asegurar el formato internacional
   let cleanPhone = String(client.phone).replace(/\D+/g, "");
   if (!cleanPhone.startsWith("54")) cleanPhone = "54" + cleanPhone;
 
   const msg = `Hola ${client.name}, te escribimos de *Rectificación Parra*.\n\nTe envío el detalle de tu presupuesto (#${q.number}) por el trabajo de ${q.description}.\n\n*Total estimado:* ${money(q.total)}\n\n(Te adjunto el comprobante en formato PDF aquí abajo 👇)`;
   const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
 
-  // 1. Descargamos el PDF a la computadora/celular
   generatePDF(q);
-  
-  // 2. Abrimos WhatsApp con el texto listo. ¡Solo hay que arrastrar el PDF!
-  setTimeout(() => {
-    window.open(url, "_blank");
-  }, 600);
+  setTimeout(() => { window.open(url, "_blank"); }, 600);
 }
 
 function openQuoteDialog(q) {
   hydrateSelects();
   if (q && q.id) {
-    el.quoteId.value = q.id;
-    el.quoteClient.value = q.clientId;
-    el.quoteType.value = q.type;
-    el.quoteDescription.value = q.description;
-    el.quoteItems.value = q.items;
-    el.quoteTotal.value = q.total;
-    el.quoteDate.value = q.date;
+    if (el.quoteId) el.quoteId.value = q.id;
+    if (el.quoteClient) el.quoteClient.value = q.clientId;
+    if (el.quoteType) el.quoteType.value = q.type;
+    if (el.quoteDescription) el.quoteDescription.value = q.description;
+    if (el.quoteItems) el.quoteItems.value = q.items;
+    if (el.quoteTotal) el.quoteTotal.value = q.total;
+    if (el.quoteDate) el.quoteDate.value = q.date;
   } else {
-    el.quoteId.value = "";
-    el.quoteClient.value = "";
-    el.quoteType.value = q?.type || "presupuesto";
-    el.quoteDescription.value = "";
-    el.quoteItems.value = "";
-    el.quoteTotal.value = 0;
-    el.quoteDate.value = today();
+    if (el.quoteId) el.quoteId.value = "";
+    if (el.quoteClient) el.quoteClient.value = "";
+    if (el.quoteType) el.quoteType.value = q?.type || "presupuesto";
+    if (el.quoteDescription) el.quoteDescription.value = "";
+    if (el.quoteItems) el.quoteItems.value = "";
+    if (el.quoteTotal) el.quoteTotal.value = 0;
+    if (el.quoteDate) el.quoteDate.value = today();
   }
   onQuoteTypeChange();
-  el.quoteDialog?.showModal();
+  if (el.quoteDialog) el.quoteDialog.showModal();
 }
 
 function onQuoteTypeChange() {
+  if (!el.quoteType) return;
   const t = el.quoteType.value;
   if (t === "presupuesto_tapa" || t === "presupuesto_motor") {
-    el.quoteCatalogSection?.classList.remove("hidden");
+    if (el.quoteCatalogSection) el.quoteCatalogSection.classList.remove("hidden");
     if (el.quoteCatalogTitle) el.quoteCatalogTitle.textContent = t === "presupuesto_tapa" ? "Servicios Tapa de Cilindros" : "Servicios Motor Bloque";
     renderCatalogList(t);
   } else {
-    el.quoteCatalogSection?.classList.add("hidden");
+    if (el.quoteCatalogSection) el.quoteCatalogSection.classList.add("hidden");
   }
 }
 
-// Estructura HTML mejorada para el Catálogo (Checkboxes y precios)
 function renderCatalogList(type) {
   const defaults = data.serviceCatalog[type] || [];
   let currentItems = [];
@@ -801,7 +796,7 @@ function onSaveQuote(e) {
   q.date = el.quoteDate.value;
 
   syncMutation("quotes", q);
-  el.quoteDialog?.close();
+  if (el.quoteDialog) el.quoteDialog.close();
   renderQuotesView();
   showToast("Comprobante guardado.");
 }
