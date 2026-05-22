@@ -6,6 +6,9 @@ const CLOUD_REFRESH_MS = 20000;
 
 const today = () => new Date().toISOString().slice(0, 10);
 const uid = () => crypto.randomUUID();
+// Se redujo el tamaño del ID generado para que Supabase no lo rechace por desbordamiento de enteros (Integer Overflow)
+const generateId = () => Math.floor(Date.now() / 1000) + Math.floor(Math.random() * 1000); 
+
 const money = (value) =>
   new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 2 }).format(
     Number(value || 0)
@@ -45,7 +48,7 @@ const cloud = { client: null, enabled: false };
 let toastTimer = null;
 let lastLocalStatusMutationAt = 0;
 
-// --- INICIALIZACIÓN SEGURA CUANDO EL DOM ESTÁ COMPLETAMENTE LISTO ---
+// --- INICIALIZACIÓN SEGURA ---
 window.addEventListener("DOMContentLoaded", () => {
   el = {
     loginScreen: document.getElementById("loginScreen"),
@@ -112,7 +115,6 @@ window.addEventListener("DOMContentLoaded", () => {
     quoteItems: document.getElementById("quoteItems"),
     quoteTotal: document.getElementById("quoteTotal"),
     quoteDate: document.getElementById("quoteDate"),
-    jobCardTemplate: document.getElementById("jobCardTemplate"),
   };
 
   data = loadData();
@@ -161,7 +163,6 @@ function bindEvents() {
 }
 
 function initCloud() {
-  // Soporte dinámico tanto para configuraciones globales como personalizadas del HTML
   const url = window.SUPABASE_URL || (window.__SUPABASE_CONFIG && window.__SUPABASE_CONFIG.url);
   const anonKey = window.SUPABASE_KEY || (window.__SUPABASE_CONFIG && window.__SUPABASE_CONFIG.anonKey);
 
@@ -216,7 +217,7 @@ async function pullCloudDataAndRender(options = {}) {
       const hasRecentLocalChange = Date.now() - lastLocalStatusMutationAt < 2500;
       if (changed.length && !hasRecentLocalChange) {
         const first = changed[0];
-        showToastWithSound(`Estado actualizado: ${first.number} -> ${first.status}`);
+        showToast(`Estado actualizado remotamente: ${first.number} -> ${first.status}`);
       }
     }
     setSyncBadge(true, "Nube");
@@ -245,7 +246,7 @@ async function onLogin(e) {
 
   let found = data.employees.find((x) => x.username.toLowerCase() === user && x.password === pass);
   if (!found && user === "admin" && pass === "admin123") {
-    found = { id: "admin", name: "Administrador", username: "admin", role: "admin" };
+    found = { id: 999, name: "Administrador", username: "admin", role: "admin" };
   }
   if (found) {
     currentUser = found;
@@ -284,6 +285,7 @@ function exitApp() {
   if (el.loginPassword) el.loginPassword.value = "";
 }
 
+// Mapeos a la nube con protección "null" para evitar rechazos de DB
 function fromCloudEmployee(row) { return { id: row.id, name: row.name || "", username: row.username || "", password: row.password || "", role: row.role || "user" }; }
 function fromCloudClient(row) { return { id: row.id, name: row.name || "", phone: row.phone || "", email: row.email || "", address: row.address || "" }; }
 function fromCloudJob(row) {
@@ -302,12 +304,19 @@ function toCloudEmployee(row) { return { id: row.id, name: row.name, username: r
 function toCloudClient(row) { return { id: row.id, name: row.name, phone: row.phone ? String(row.phone) : "", email: row.email, address: row.address }; }
 function toCloudJob(row) {
   return {
-    id: row.id, number: row.number, type: row.type, vehicle: row.vehicle, clientid: row.clientId,
-    priority: row.priority, assignedemployeeid: row.assignedEmployeeId || "", status: row.status,
-    indate: row.inDate || "", promiseddate: row.promisedDate || "", observations: row.observations || "", outdate: row.outDate || "",
+    id: row.id, number: row.number, type: row.type, vehicle: row.vehicle, 
+    clientid: row.clientId || null, priority: row.priority, 
+    assignedemployeeid: row.assignedEmployeeId || null, status: row.status,
+    indate: row.inDate || null, promiseddate: row.promisedDate || null, 
+    observations: row.observations || "", outdate: row.outDate || null,
   };
 }
-function toCloudQuote(row) { return { id: row.id, number: row.number, clientid: row.clientId, type: row.type, description: row.description, items: row.items || "", total: row.total, date: row.date || "" }; }
+function toCloudQuote(row) { 
+  return { 
+    id: row.id, number: row.number, clientid: row.clientId || null, type: row.type, 
+    description: row.description, items: row.items || "", total: row.total, date: row.date || null 
+  }; 
+}
 function toCloudHistory(row) { return { id: row.id, jobid: row.jobId, employeeid: row.employeeId, action: row.action, timestamp: row.timestamp }; }
 
 function syncCloudSafely(fn) {
@@ -378,7 +387,6 @@ function persist() {
 function seedDemoData() {
   if (data.employees.length > 0) return;
   data.employees.push({ id: 101, name: "Gómez Carlos", username: "carlos", password: "123", role: "user" });
-  data.clients.push({ id: 201, name: "Mecánica Juan", phone: "11223344", email: "juan@mail.com", address: "Av. Mitre 123" });
   persist();
 }
 
@@ -417,21 +425,6 @@ function renderCountersWidget() {
   el.countDoneToday.textContent = doneToday;
 }
 
-function sendWhatsAppNotification(job) {
-  const client = getClient(job.clientId);
-  if (!client || !client.phone) {
-    showToast("El cliente no tiene un teléfono registrado.");
-    return;
-  }
-  let cleanPhone = String(client.phone).replace(/\D+/g, "");
-  if (!cleanPhone.startsWith("54")) {
-    cleanPhone = "54" + cleanPhone;
-  }
-  const message = `Hola ${client.name}, te avisamos de *Rectificación Parra* que el trabajo de tu vehículo *${job.vehicle}* (${job.type === "motor" ? "Motor" : "Tapa de Cilindros"}) ya se encuentra en estado: *${job.status.toUpperCase()}*. ¡Saludos!`;
-  const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;
-  window.open(url, "_blank");
-}
-
 function renderJobsView(tab) {
   let list = [];
   if (tab === "trabajos") list = data.jobs;
@@ -452,7 +445,7 @@ function renderJobsView(tab) {
   if (!el.mainView) return;
   el.mainView.innerHTML = `<h3>${tabTitle(tab)}</h3>`;
   if (!list.length) {
-    el.mainView.innerHTML += `<p class="empty-msg">No se encontraron órdenes registradas en esta sección.</p>`;
+    el.mainView.innerHTML += `<p class="empty-msg">No se encontraron órdenes en esta sección.</p>`;
     return;
   }
   const grid = document.createElement("div");
@@ -476,7 +469,6 @@ function renderJobsView(tab) {
         <h4>${escapeHtml(job.vehicle.toUpperCase())}</h4>
         <p class="job-type-badge">${job.type === "motor" ? "⚙️ MOTOR" : "🔩 TAPA"}</p>
         <p><strong>Cliente:</strong> ${client ? escapeHtml(client.name) : "No asignado"}</p>
-        <p><strong>Operario:</strong> ${emp ? escapeHtml(emp.name) : "No asignado"}</p>
       </div>
       <div class="job-meta">
         <div class="status-selector-wrap">
@@ -485,18 +477,14 @@ function renderJobsView(tab) {
             ${STATES.map((s) => `<option value="${s}" ${job.status === s ? "selected" : ""}>${s}</option>`).join("")}
           </select>
         </div>
-        <p><small>Ingreso: ${job.inDate}</small></p>
-        ${job.promisedDate ? `<p><small class="${isLate(job) ? "text-danger" : ""}">Promesa: ${job.promisedDate} ${isLate(job) ? "⚠️" : ""}</small></p>` : ""}
       </div>
       <div class="job-actions">
         <button class="btn-edit-job btn-soft" data-id="${job.id}">Editar</button>
-        <button class="btn-whatsapp btn-success-action" data-id="${job.id}" title="Enviar aviso por WhatsApp">💬 Avisar</button>
       </div>
     `;
 
     card.querySelector(".status-select").addEventListener("change", (e) => updateJobStatus(job.id, e.target.value));
     card.querySelector(".btn-edit-job").addEventListener("click", () => openJobDialog(job));
-    card.querySelector(".btn-whatsapp").addEventListener("click", () => sendWhatsAppNotification(job));
     grid.appendChild(card);
   });
   el.mainView.appendChild(grid);
@@ -508,16 +496,9 @@ function updateJobStatus(id, newStatus) {
   job.status = newStatus;
   if (newStatus === "Entregado" || newStatus === "Cancelado") job.outDate = today();
   lastLocalStatusMutationAt = Date.now();
-  logHistory(job.id, `Estado cambiado a ${newStatus}`);
   syncMutation("jobs", job);
   renderActiveTab();
-  showToast(`Trabajo #${job.number} modificado a ${newStatus}`);
-}
-
-function logHistory(jobId, action) {
-  const row = { id: Date.now() + Math.floor(Math.random() * 100), jobId, employeeId: currentUser.id, action, timestamp: new Date().toISOString() };
-  data.history.push(row);
-  syncMutation("history", row);
+  showToast(`Trabajo #${job.number} -> ${newStatus}`);
 }
 
 function openJobDialog(job) {
@@ -552,7 +533,7 @@ function openJobDialog(job) {
 
 function onSaveJob(e) {
   e.preventDefault();
-  const id = el.jobId.value ? Number(el.jobId.value) : Date.now();
+  const id = el.jobId.value ? Number(el.jobId.value) : generateId();
   const isNew = !el.jobId.value;
   let job = getJob(id);
   if (isNew) {
@@ -575,39 +556,28 @@ function onSaveJob(e) {
   job.observations = el.jobObservations.value.trim();
   job.outDate = el.jobOutDate.value;
 
-  logHistory(job.id, isNew ? "Creación de orden" : "Edición general de orden");
   syncMutation("jobs", job);
   el.jobDialog?.close();
   renderActiveTab();
-  showToast(isNew ? "Orden guardada con éxito." : "Orden actualizada.");
+  showToast("Orden procesada y guardada.");
 }
 
 function renderClientsView() {
   if (!el.mainView) return;
-  el.mainView.innerHTML = `
-    <div class="view-header-row">
-      <h3>Clientes Registrados</h3>
-      <button id="btnNewClient" class="btn-primary" style="padding:0.4rem 1rem; font-size:0.9rem;">+ Nuevo Cliente</button>
-    </div>
-  `;
+  el.mainView.innerHTML = `<div class="view-header-row"><h3>Clientes</h3><button id="btnNewClient" class="btn-primary">+ Nuevo</button></div>`;
   document.getElementById("btnNewClient")?.addEventListener("click", () => openClientDialog());
-  if (!data.clients.length) {
-    el.mainView.innerHTML += `<p class="empty-msg">No hay clientes cargados en el sistema.</p>`;
-    return;
-  }
+  if (!data.clients.length) return;
+  
   const wrap = document.createElement("div");
   wrap.className = "table-responsive";
   wrap.innerHTML = `
     <table class="data-table">
-      <thead>
-        <tr><th>Nombre</th><th>Teléfono</th><th>Dirección</th><th>Acciones</th></tr>
-      </thead>
+      <thead><tr><th>Nombre</th><th>Teléfono</th><th>Acciones</th></tr></thead>
       <tbody>
         ${data.clients.map((c) => `
           <tr>
             <td><strong>${escapeHtml(c.name)}</strong></td>
             <td>${escapeHtml(c.phone || "-")}</td>
-            <td>${escapeHtml(c.address || "-")}</td>
             <td><button class="btn-edit-client btn-soft" data-id="${c.id}">Editar</button></td>
           </tr>
         `).join("")}
@@ -615,10 +585,7 @@ function renderClientsView() {
     </table>
   `;
   wrap.querySelectorAll(".btn-edit-client").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const c = data.clients.find((x) => x.id === Number(btn.dataset.id));
-      if (c) openClientDialog(c);
-    });
+    btn.addEventListener("click", () => openClientDialog(data.clients.find(x => x.id == btn.dataset.id)));
   });
   el.mainView.appendChild(wrap);
 }
@@ -640,13 +607,10 @@ function openClientDialog(c) {
 
 function onSaveClient(e) {
   e.preventDefault();
-  const id = el.clientId.value ? Number(el.clientId.value) : Date.now();
+  const id = el.clientId.value ? Number(el.clientId.value) : generateId();
   const isNew = !el.clientId.value;
   let c = data.clients.find((x) => x.id === id);
-  if (isNew) {
-    c = { id };
-    data.clients.push(c);
-  }
+  if (isNew) { c = { id }; data.clients.push(c); }
   c.name = el.clientName.value.trim();
   c.phone = el.clientPhone.value.trim();
   c.address = el.clientAddress.value.trim();
@@ -661,7 +625,7 @@ function renderQuotesView() {
   if (!el.mainView) return;
   el.mainView.innerHTML = `<h3>Presupuestos y Comprobantes</h3>`;
   if (!data.quotes.length) {
-    el.mainView.innerHTML += `<p class="empty-msg">No hay presupuestos creados todavía.</p>`;
+    el.mainView.innerHTML += `<p class="empty-msg">No hay presupuestos creados.</p>`;
     return;
   }
   const grid = document.createElement("div");
@@ -670,6 +634,8 @@ function renderQuotesView() {
     const c = getClient(q.clientId);
     const card = document.createElement("article");
     card.className = "job-card quote-card-item";
+    
+    // Aquí se agregan los botones de PDF, WhatsApp y Editar
     card.innerHTML = `
       <div class="job-main">
         <span class="job-id">#${q.number}</span>
@@ -679,16 +645,42 @@ function renderQuotesView() {
         <p><strong>Total:</strong> <strong style="color:var(--green); font-size:1.1rem;">${money(q.total)}</strong></p>
       </div>
       <div class="job-meta"><p><small>Fecha: ${q.date}</small></p></div>
-      <div class="job-actions">
+      <div class="job-actions" style="display: flex; gap: 5px; flex-wrap: wrap;">
         <button class="btn-download-pdf btn-soft" data-id="${q.id}">📄 PDF</button>
+        <button class="btn-wa-pdf" style="background:#25D366; color:white; border:none; padding:0.4rem 0.8rem; border-radius:6px; cursor:pointer;" data-id="${q.id}">💬 Enviar WA</button>
         <button class="btn-edit-quote btn-soft" data-id="${q.id}">Editar</button>
       </div>
     `;
     card.querySelector(".btn-edit-quote").addEventListener("click", () => openQuoteDialog(q));
     card.querySelector(".btn-download-pdf").addEventListener("click", () => generatePDF(q));
+    card.querySelector(".btn-wa-pdf").addEventListener("click", () => sendWhatsAppQuote(q));
     grid.appendChild(card);
   });
   el.mainView.appendChild(grid);
+}
+
+// Nueva función que abre WhatsApp y descarga el PDF al mismo tiempo
+function sendWhatsAppQuote(q) {
+  const client = getClient(q.clientId);
+  if (!client || !client.phone) {
+    alert("Para enviar por WhatsApp, el cliente debe tener un teléfono cargado.");
+    return;
+  }
+  
+  // Limpia el número de teléfono para asegurar el formato internacional
+  let cleanPhone = String(client.phone).replace(/\D+/g, "");
+  if (!cleanPhone.startsWith("54")) cleanPhone = "54" + cleanPhone;
+
+  const msg = `Hola ${client.name}, te escribimos de *Rectificación Parra*.\n\nTe envío el detalle de tu presupuesto (#${q.number}) por el trabajo de ${q.description}.\n\n*Total estimado:* ${money(q.total)}\n\n(Te adjunto el comprobante en formato PDF aquí abajo 👇)`;
+  const url = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
+
+  // 1. Descargamos el PDF a la computadora/celular
+  generatePDF(q);
+  
+  // 2. Abrimos WhatsApp con el texto listo. ¡Solo hay que arrastrar el PDF!
+  setTimeout(() => {
+    window.open(url, "_blank");
+  }, 600);
 }
 
 function openQuoteDialog(q) {
@@ -725,6 +717,7 @@ function onQuoteTypeChange() {
   }
 }
 
+// Estructura HTML mejorada para el Catálogo (Checkboxes y precios)
 function renderCatalogList(type) {
   const defaults = data.serviceCatalog[type] || [];
   let currentItems = [];
@@ -736,11 +729,18 @@ function renderCatalogList(type) {
     const p = match ? match.amount : def.amount;
     return `
       <div class="catalog-row">
-        <label><input type="checkbox" class="catalog-check" data-name="${escapeHtml(def.name)}" ${checked ? "checked" : ""}> ${escapeHtml(def.name)}</label>
-        <input type="number" class="catalog-price-input" data-name="${escapeHtml(def.name)}" value="${p}" min="0" ${!checked ? "disabled" : ""}>
+        <label class="catalog-label">
+          <input type="checkbox" class="catalog-check" data-name="${escapeHtml(def.name)}" ${checked ? "checked" : ""}> 
+          <span>${escapeHtml(def.name)}</span>
+        </label>
+        <div class="catalog-price-wrap">
+          <span class="currency-symbol">$</span>
+          <input type="number" class="catalog-price-input" data-name="${escapeHtml(def.name)}" value="${p}" min="0" ${!checked ? "disabled" : ""}>
+        </div>
       </div>
     `;
   }).join("");
+  
   el.quoteCatalogList.querySelectorAll(".catalog-check").forEach((chk) => {
     chk.addEventListener("change", () => {
       const pInput = el.quoteCatalogList.querySelector(`.catalog-price-input[data-name="${chk.dataset.name}"]`);
@@ -782,7 +782,7 @@ function syncQuoteItemsFromCatalog() {
 
 function onSaveQuote(e) {
   e.preventDefault();
-  const id = el.quoteId.value ? Number(el.quoteId.value) : Date.now();
+  const id = el.quoteId.value ? Number(el.quoteId.value) : generateId();
   const isNew = !el.quoteId.value;
   let q = data.quotes.find((x) => x.id === id);
   if (isNew) {
@@ -803,11 +803,11 @@ function onSaveQuote(e) {
   syncMutation("quotes", q);
   el.quoteDialog?.close();
   renderQuotesView();
-  showToast("Comprobante procesado.");
+  showToast("Comprobante guardado.");
 }
 
 function generatePDF(q) {
-  if (!window.jspdf) { showToast("Error al cargar generador de PDF"); return; }
+  if (!window.jspdf) { showToast("Error al generar PDF"); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const client = getClient(q.clientId);
@@ -838,7 +838,6 @@ function generatePDF(q) {
   doc.text(`Cliente: ${client ? client.name : "Asignación libre"}`, 15, 64);
   doc.text(`Teléfono: ${client ? client.phone || "-" : "-"}`, 15, 71);
   doc.text(`Detalle principal: ${q.description}`, 15, 78);
-  doc.text(`Tipo de comprobante: ${String(q.type).replace("_", " ").toUpperCase()}`, 15, 85);
 
   doc.setFont("Helvetica", "bold");
   doc.text("DETALLE DE TRABAJOS Y MATERIALES", 15, 100);
@@ -881,7 +880,7 @@ function exportData() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `recticontrol_backup_${today()}.json`;
+  a.download = `backup_${today()}.json`;
   a.click();
 }
 
@@ -892,29 +891,16 @@ function importData(e) {
   reader.onload = async (evt) => {
     try {
       const parsed = JSON.parse(evt.target.result);
-      if (parsed.jobs && parsed.clients) {
+      if (parsed.jobs) {
         data = parsed;
         persist();
         renderActiveTab();
-        showToast("Datos cargados localmente.");
-        if (cloud.enabled) {
-          await Promise.all([
-            ...data.employees.map((x) => pushTableRow("employees", toCloudEmployee(x))),
-            ...data.clients.map((x) => pushTableRow("clients", toCloudClient(x))),
-            ...data.jobs.map((x) => pushTableRow("jobs", toCloudJob(x))),
-            ...data.quotes.map((x) => pushTableRow("quotes", toCloudQuote(x))),
-            ...data.history.map((x) => pushTableRow("history", toCloudHistory(x))),
-          ]);
-          await pushCounters();
-        }
       }
-    } catch { alert("Archivo de respaldo inválido."); }
-    finally { if (el.importDataInput) el.importDataInput.value = ""; }
+    } catch { alert("Archivo inválido."); }
   };
   reader.readAsText(file);
 }
 
-function showToastWithSound(m) { showToast(m); }
 function showToast(m) {
   if (!el.toast) return;
   el.toast.textContent = m;
@@ -930,21 +916,14 @@ function getJob(id) { return data.jobs.find((j) => j.id === Number(id)); }
 function getQuote(id) { return data.quotes.find((q) => q.id === Number(id)); }
 
 function tabTitle(tab) {
-  if (tab === "en proceso") return "Trabajos ingresados y en proceso";
-  if (tab === "terminados") return "Trabajos terminados";
-  if (tab === "entregados") return "Trabajos entregados";
   if (tab === "presupuestos") return "Presupuestos de clientes";
-  return "Todos los trabajos";
+  return "Trabajos";
 }
 
 function isLate(job) {
   if (!job.promisedDate) return false;
-  if (job.status === "Terminado" || job.status === "Entregado" || job.status === "Cancelado") return false;
-  return job.promisedDate < today();
+  return job.status !== "Terminado" && job.status !== "Entregado" && job.status !== "Cancelado" && job.promisedDate < today();
 }
 
-function digits(value) { return String(value || "").replace(/\D+/g, ""); }
 function getSearchText() { return el.searchInput ? el.searchInput.value.trim() : ""; }
-function normalizeToken(value) { return String(value || "").toLowerCase().replaceAll(" ", "-"); }
-function addDays(dateIso, days) { const date = new Date(dateIso); date.setDate(date.getDate() + days); return date.toISOString().slice(0, 10); }
 function escapeHtml(raw) { return String(raw || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;"); }
