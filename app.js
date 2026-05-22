@@ -1422,9 +1422,9 @@ async function buildQuotePdfDoc(quote) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.2);
   doc.text("Tapas de cilindro y rectificacion de motores", m + 38, headerY + 15);
-  doc.text("Av. Mitre 1234 - Pilar, Buenos Aires", m + 38, headerY + 20);
-  doc.text("Tel: 2304-427198", m + 38, headerY + 25);
-  doc.text("R.U.T.: 25134267", m + 38, headerY + 30);
+  doc.text("Av.Dr Honorio Pueyrredon 840 - Pilar, Buenos Aires", m + 38, headerY + 20);
+  doc.text("Tel Solo Whatsaap : 011-4997-3523", m + 38, headerY + 25);
+  doc.text("Tel Solo Llamadas: 0230-442-7198", m + 38, headerY + 30);
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12.5);
