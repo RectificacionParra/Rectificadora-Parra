@@ -463,7 +463,7 @@ function persist() {
 function defaultData() {
   return {
     employees: [
-      { id: uid(), name: "Juan Perez", username: "juan", password: "1234" },
+      { id: uid(), name: "Thiago Ferreyra", username: "thiago", password: "1234" },
       { id: uid(), name: "Maria Lopez", username: "maria", password: "1234" },
       { id: uid(), name: "Admin Taller", username: "admin", password: "admin123" },
     ],
